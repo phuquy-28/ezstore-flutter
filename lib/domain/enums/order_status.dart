@@ -1,0 +1,8 @@
+enum OrderStatus {
+  PENDING,
+  PROCESSING,
+  SHIPPING,
+  DELIVERED,
+  CANCELLED,
+  RETURNED,
+}
