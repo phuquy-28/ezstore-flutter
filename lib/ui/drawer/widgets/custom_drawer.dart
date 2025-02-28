@@ -1,34 +1,31 @@
+import 'package:ezstore_flutter/provider/user_info_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/constants.dart';
 import '../../../routing/app_routes.dart';
 import '../../../ui/drawer/viewmodel/drawer_viewmodel.dart';
+import '../../../domain/models/user_info_response.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => DrawerViewModel(),
-      builder: (context, child) {
-        return Consumer<DrawerViewModel>(
-          builder: (context, viewModel, _) {
-            return Drawer(
-              child: Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    _buildDrawerHeader(),
-                    Expanded(
-                      child: _buildDrawerItems(context),
-                    ),
-                    _buildLogoutSection(context),
-                  ],
+    return Consumer<UserInfoProvider>(
+      builder: (context, userInfoProvider, child) {
+        return Drawer(
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                _buildDrawerHeader(userInfoProvider.userInfo),
+                Expanded(
+                  child: _buildDrawerItems(context),
                 ),
-              ),
-            );
-          },
+                _buildLogoutSection(context),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -56,7 +53,7 @@ class CustomDrawer extends StatelessWidget {
     }
   }
 
-  Widget _buildDrawerHeader() {
+  Widget _buildDrawerHeader(UserInfoResponse? userInfo) {
     return DrawerHeader(
       decoration: const BoxDecoration(color: Colors.white),
       child: Column(
@@ -69,8 +66,8 @@ class CustomDrawer extends StatelessWidget {
             child: Text('YC', style: TextStyle(fontSize: 24)),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Matthew',
+          Text(
+            userInfo?.firstName ?? 'Người dùng',
             style: TextStyle(
               color: Colors.black,
               fontSize: 20,
@@ -78,9 +75,6 @@ class CustomDrawer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            width: 200,
-          ),
         ],
       ),
     );

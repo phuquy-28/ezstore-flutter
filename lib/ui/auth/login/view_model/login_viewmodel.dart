@@ -13,8 +13,7 @@ class LoginViewModel extends ChangeNotifier {
   bool _isPasswordVisible = false;
   String? _error;
 
-  LoginViewModel({AuthRepository? authRepository})
-      : _authRepository = authRepository ?? AuthRepository();
+  LoginViewModel(this._authRepository);
 
   bool get isLoading => _isLoading;
   bool get isPasswordVisible => _isPasswordVisible;

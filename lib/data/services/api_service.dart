@@ -3,18 +3,13 @@ import 'package:ezstore_flutter/data/services/api_exception.dart';
 import 'package:ezstore_flutter/data/models/api_response.dart';
 import '../../config/constants.dart';
 import 'dart:developer' as dev;
-import 'package:ezstore_flutter/data/services/shared_preference_service.dart';
+import 'shared_preference_service.dart';
 
 class ApiService {
-  static final ApiService _instance = ApiService._internal();
   late final Dio _dio;
-  final SharedPreferenceService _preferenceService = SharedPreferenceService();
+  final SharedPreferenceService _preferenceService;
 
-  factory ApiService() {
-    return _instance;
-  }
-
-  ApiService._internal() {
+  ApiService(this._preferenceService) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,

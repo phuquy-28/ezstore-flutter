@@ -1,7 +1,9 @@
 import 'package:ezstore_flutter/routing/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'data/services/shared_preference_service.dart';
 import 'app.dart';
+import 'config/dependencies.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,5 +13,10 @@ void main() async {
   final initialRoute =
       prefService.isLoggedIn() ? AppRoutes.dashboard : AppRoutes.login;
 
-  runApp(MyApp(initialRoute: initialRoute));
+  runApp(
+    MultiProvider(
+      providers: providers,
+      child: MyApp(initialRoute: initialRoute),
+    ),
+  );
 }

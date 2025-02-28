@@ -5,34 +5,6 @@ import '../../../domain/enums/order_status.dart';
 import '../../../domain/enums/payment_method.dart';
 import '../../../domain/enums/delivery_method.dart';
 
-// class OrderResponse {
-//   final String orderId;
-//   final String date;
-//   final String customer;
-//   final String total;
-//   final String paymentStatus;
-//   final String orderStatus;
-//   final String quantity;
-//   final String paymentMethod;
-//   final String shippingMethod;
-//   final Color paymentStatusColor;
-//   final Color orderStatusColor;
-
-//   const OrderResponse({
-//     required this.orderId,
-//     required this.date,
-//     required this.customer,
-//     required this.total,
-//     required this.paymentStatus,
-//     required this.orderStatus,
-//     required this.quantity,
-//     required this.paymentMethod,
-//     required this.shippingMethod,
-//     required this.paymentStatusColor,
-//     required this.orderStatusColor,
-//   });
-// }
-
 class OrdersTable extends StatelessWidget {
   final List<OrderResponse> orders;
 

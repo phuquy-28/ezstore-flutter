@@ -1,3 +1,4 @@
+import 'package:ezstore_flutter/data/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import '../../../../config/constants.dart';
 import '../../../core/shared/scalable_logo.dart';
@@ -12,7 +13,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LoginViewModel(),
+      create: (_) => LoginViewModel(context.read<AuthRepository>()),
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, child) {
           return Scaffold(

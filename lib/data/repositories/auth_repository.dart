@@ -5,11 +5,7 @@ class AuthRepository {
   final AuthService _authService;
   final SharedPreferenceService _preferenceService;
 
-  AuthRepository({
-    AuthService? authService,
-    SharedPreferenceService? preferenceService,
-  })  : _authService = authService ?? AuthService(),
-        _preferenceService = preferenceService ?? SharedPreferenceService();
+  AuthRepository(this._authService, this._preferenceService);
 
   Future<void> login(String email, String password) async {
     final authData = await _authService.login(email, password);

@@ -5,8 +5,7 @@ class DrawerViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
   String? _error;
 
-  DrawerViewModel({AuthRepository? authRepository})
-      : _authRepository = authRepository ?? AuthRepository();
+  DrawerViewModel(this._authRepository);
 
   String? get error => _error;
 

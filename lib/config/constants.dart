@@ -9,13 +9,18 @@ class ApiConstants {
       : 'http://localhost:8080/api/v1';
 
   // Auth endpoints
-  static const String login = '/workspace/login';
   static const String logout = '/auth/logout';
   static const String refresh = '/auth/refresh';
 
+  // Workspace endpoints
+  static const String login = '/workspace/login';
+  static const String dashboard = '/workspace/dashboard';
+  static const String revenueByMonth = '/workspace/revenue-by-month';
+
   // User endpoints
-  static const String profile = '/user/profile';
-  static const String updateProfile = '/user/profile';
+  static const String info = '/users/info';
+  static const String profile = '/users/profile';
+  static const String updateProfile = '/users/profile';
 
   // Product endpoints
   static const String products = '/products';
