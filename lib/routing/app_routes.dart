@@ -1,7 +1,12 @@
+import 'package:ezstore_flutter/ui/review/widgets/review_screen.dart';
 import 'package:flutter/material.dart';
 import '../ui/auth/login/widgets/login_screen.dart';
 import '../ui/dashboard/widgets/dashboard_screen.dart';
 import '../ui/product/widgets/product_screen.dart';
+import '../ui/user/widgets/user_screen.dart';
+import '../ui/category/widgets/category_screen.dart';
+import '../ui/order/widgets/order_screen.dart';
+import '../ui/promotion/widgets/promotion_screen.dart';
 import '../ui/core/shared/error_screen.dart';
 
 class AppRoutes {
@@ -12,6 +17,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String categories = '/categories';
   static const String users = '/users';
+  static const String promotions = '/promotions';
   static const String error = '/error';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -30,15 +36,17 @@ class AppRoutes {
       case dashboard:
         return _createRoute(const DashboardScreen());
       case products:
-        return _createRoute(const ProductsScreen());
-      // case reviews:
-      //   return _createRoute(const ReviewsScreen());
-      // case orders:
-      //   return _createRoute(const OrdersScreen());
-      // case categories:
-      //   return _createRoute(const CategoriesScreen());
-      // case users:
-      //   return _createRoute(const UsersScreen());
+        return _createRoute(const ProductScreen());
+      case reviews:
+        return _createRoute(const ReviewScreen());
+      case orders:
+        return _createRoute(const OrderScreen());
+      case categories:
+        return _createRoute(const CategoryScreen());
+      case users:
+        return _createRoute(const UserScreen());
+      case promotions:
+        return _createRoute(const PromotionScreen());
       case error:
         return _createRoute(ErrorScreen(
           title: args?['title'] as String?,
