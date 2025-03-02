@@ -42,6 +42,12 @@ class AppColors {
   static const inputBackground = Colors.white;
   static const textPrimary = Color(0xFF1E1E1E);
   static const textSecondary = Color(0xFF757575);
+
+  // Role colors
+  static const roleAdmin = Colors.red;
+  static const roleManager = Colors.blue;
+  static const roleStaff = Colors.grey;
+  static const roleUser = Colors.grey;
 }
 
 class AppStrings {
@@ -52,8 +58,44 @@ class AppStrings {
   static const reviews = 'Đánh giá';
   static const orders = 'Đơn hàng';
   static const categories = 'Danh mục';
+  static const promotions = 'Khuyến mãi';
   static const users = 'Người dùng';
   static const logout = 'Đăng xuất';
+
+  // User screen strings
+  static const userSearchHint = 'Tìm kiếm người dùng...';
+  static const addUser = 'Thêm người dùng mới';
+  static const editUser = 'Sửa người dùng';
+  static const userDetails = 'Chi tiết người dùng';
+  static const deleteConfirmation = 'Xác nhận xóa';
+  static const cancel = 'Hủy';
+  static const save = 'Lưu';
+  static const add = 'Thêm';
+  static const edit = 'Sửa';
+  static const delete = 'Xóa';
+  static const view = 'Xem chi tiết';
+  static const no = 'Không';
+  static const yes = 'Có';
+  
+  // User form fields
+  static const name = 'Tên';
+  static const email = 'Email';
+  static const dateOfBirth = 'Ngày sinh';
+  static const gender = 'Giới tính';
+  static const role = 'Vai trò';
+
+  // User roles
+  static const roleAdmin = 'ADMIN';
+  static const roleManager = 'MANAGER'; 
+  static const roleStaff = 'STAFF';
+  static const roleUser = 'USER';
+
+  // Gender options
+  static const genderMale = 'Nam';
+  static const genderFemale = 'Nữ';
+
+  // Delete confirmation
+  static const deleteUserConfirmation = 'Bạn có chắc chắn muốn xóa người dùng';
 }
 
 class AppSizes {
@@ -82,4 +124,18 @@ class AppTextStyles {
     fontSize: 22,
     fontWeight: FontWeight.bold,
   );
+}
+
+class AppLists {
+  static const userRoles = [
+    AppStrings.roleAdmin,
+    AppStrings.roleUser, 
+    AppStrings.roleManager,
+    AppStrings.roleStaff
+  ];
+
+  static const genders = [
+    AppStrings.genderMale,
+    AppStrings.genderFemale
+  ];
 }

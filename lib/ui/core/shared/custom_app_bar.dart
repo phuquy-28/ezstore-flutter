@@ -23,6 +23,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       iconTheme: const IconThemeData(color: Colors.black87),
       actions: [
+        if (additionalActions != null) ...additionalActions!,
         if (showNotification) ...[
           Stack(
             children: [
@@ -53,7 +54,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
         ],
-        if (additionalActions != null) ...additionalActions!,
         const SizedBox(width: 8),
       ],
     );

@@ -86,39 +86,45 @@ class CustomDrawer extends StatelessWidget {
       children: [
         _buildDrawerItem(
           context,
-          Icons.dashboard,
+          Icons.dashboard_outlined,
           AppStrings.dashboard,
           AppRoutes.dashboard,
         ),
         _buildDrawerItem(
           context,
-          Icons.shopping_bag,
+          Icons.people_outlined,
+          AppStrings.users,
+          AppRoutes.users,
+        ),
+        _buildDrawerItem(
+          context,
+          Icons.shopping_bag_outlined,
           AppStrings.products,
           AppRoutes.products,
         ),
         _buildDrawerItem(
           context,
-          Icons.star,
-          AppStrings.reviews,
-          AppRoutes.reviews,
-        ),
-        _buildDrawerItem(
-          context,
-          Icons.receipt,
-          AppStrings.orders,
-          AppRoutes.orders,
-        ),
-        _buildDrawerItem(
-          context,
-          Icons.category,
+          Icons.category_outlined,
           AppStrings.categories,
           AppRoutes.categories,
         ),
         _buildDrawerItem(
           context,
-          Icons.people,
-          AppStrings.users,
-          AppRoutes.users,
+          Icons.receipt_outlined,
+          AppStrings.orders,
+          AppRoutes.orders,
+        ),
+        _buildDrawerItem(
+          context,
+          Icons.discount_outlined,
+          AppStrings.promotions,
+          AppRoutes.promotions,
+        ),
+        _buildDrawerItem(
+          context,
+          Icons.star_outline,
+          AppStrings.reviews,
+          AppRoutes.reviews,
         ),
       ],
     );
