@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../../config/constants.dart';
 
-class UserSearchField extends StatelessWidget {
+class SearchField extends StatelessWidget {
   final Function(String) onChanged;
+  final String hintText;
 
-  const UserSearchField({
+  const SearchField({
     super.key,
     required this.onChanged,
+    this.hintText = 'Tìm kiếm...',
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSizes.paddingNormal,
-        top: AppSizes.paddingNormal,
-        right: AppSizes.paddingNormal,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingNormal,
+        vertical: AppSizes.paddingNormal,
       ),
       child: TextField(
         decoration: InputDecoration(
-          hintText: AppStrings.userSearchHint,
+          hintText: hintText,
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.radiusNormal),
@@ -33,4 +34,4 @@ class UserSearchField extends StatelessWidget {
       ),
     );
   }
-} 
+}

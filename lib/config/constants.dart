@@ -18,6 +18,7 @@ class ApiConstants {
   static const String revenueByMonth = '/workspace/revenue-by-month';
 
   // User endpoints
+  static const String users = '/users';
   static const String info = '/users/info';
   static const String profile = '/users/profile';
   static const String updateProfile = '/users/profile';
@@ -61,28 +62,6 @@ class AppStrings {
   static const promotions = 'Khuyến mãi';
   static const users = 'Người dùng';
   static const logout = 'Đăng xuất';
-
-  // User screen strings
-  static const userSearchHint = 'Tìm kiếm người dùng...';
-  static const addUser = 'Thêm người dùng mới';
-  static const editUser = 'Sửa người dùng';
-  static const userDetails = 'Chi tiết người dùng';
-  static const deleteConfirmation = 'Xác nhận xóa';
-  static const cancel = 'Hủy';
-  static const save = 'Lưu';
-  static const add = 'Thêm';
-  static const edit = 'Sửa';
-  static const delete = 'Xóa';
-  static const view = 'Xem chi tiết';
-  static const no = 'Không';
-  static const yes = 'Có';
-  
-  // User form fields
-  static const name = 'Tên';
-  static const email = 'Email';
-  static const dateOfBirth = 'Ngày sinh';
-  static const gender = 'Giới tính';
-  static const role = 'Vai trò';
 
   // User roles
   static const roleAdmin = 'ADMIN';

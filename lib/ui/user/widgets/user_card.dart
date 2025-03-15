@@ -1,12 +1,17 @@
+import 'package:ezstore_flutter/domain/models/user.dart';
 import 'package:flutter/material.dart';
 import '../../../config/constants.dart';
-import '../../../data/models/user.dart';
 import 'user_action_sheet.dart';
 
 class UserCard extends StatelessWidget {
   final User user;
+  final VoidCallback onViewDetails;
 
-  const UserCard({super.key, required this.user});
+  const UserCard({
+    Key? key,
+    required this.user,
+    required this.onViewDetails,
+  }) : super(key: key);
 
   Color getRoleColor() {
     switch (user.role) {
@@ -34,7 +39,7 @@ class UserCard extends StatelessWidget {
     return Card(
       elevation: 2,
       child: InkWell(
-        onTap: () => _showActionSheet(context),
+        onTap: () => onViewDetails(),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.paddingNormal),
           child: Column(
@@ -47,7 +52,7 @@ class UserCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.name,
+                          user.firstName,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -76,7 +81,7 @@ class UserCard extends StatelessWidget {
                   Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
-                    user.dateOfBirth,
+                    user.birthDate ?? '',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -86,7 +91,7 @@ class UserCard extends StatelessWidget {
                   Icon(Icons.person_outline, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
-                    user.gender,
+                    user.gender ?? '',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -106,7 +111,8 @@ class UserCard extends StatelessWidget {
                   border: Border.all(color: getRoleColor()),
                 ),
                 child: Text(
-                  user.role,
+                  // user.role.name,
+                  'Admin',
                   style: TextStyle(
                     color: getRoleColor(),
                     fontWeight: FontWeight.bold,
@@ -120,4 +126,4 @@ class UserCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

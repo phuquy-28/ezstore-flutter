@@ -1,6 +1,7 @@
 import 'package:ezstore_flutter/config/constants.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
+import 'package:ezstore_flutter/ui/user/widgets/search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -116,30 +117,12 @@ class _ProductScreenState extends State<ProductScreen> {
       drawer: CustomDrawer(),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppSizes.paddingNormal,
-              top: AppSizes.paddingNormal,
-              right: AppSizes.paddingNormal,
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm sản phẩm...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusNormal),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-            ),
+          SearchField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
           ),
           Expanded(
             child: ListView.separated(

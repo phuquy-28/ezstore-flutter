@@ -1,4 +1,5 @@
 import 'package:ezstore_flutter/ui/review/widgets/review_screen.dart';
+import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
 import 'package:flutter/material.dart';
 import '../ui/auth/login/widgets/login_screen.dart';
 import '../ui/dashboard/widgets/dashboard_screen.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String categories = '/categories';
   static const String users = '/users';
+  static const String userDetail = '/userDetail';
   static const String promotions = '/promotions';
   static const String error = '/error';
 
@@ -45,6 +47,10 @@ class AppRoutes {
         return _createRoute(const CategoryScreen());
       case users:
         return _createRoute(const UserScreen());
+      case userDetail:
+        final userId = args?['id'];
+        return _createRoute(
+            UserDetailScreen(isEditMode: false, userId: userId));
       case promotions:
         return _createRoute(const PromotionScreen());
       case error:

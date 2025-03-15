@@ -1,15 +1,13 @@
+import 'package:ezstore_flutter/domain/models/user.dart';
 import 'package:flutter/material.dart';
-import '../../../config/constants.dart';
-import '../../../data/models/user.dart';
-import 'user_form_dialog.dart';
-import 'user_details.dart';
+import '../../../routing/app_routes.dart';
 
 class UserActionSheet extends StatelessWidget {
   final User user;
 
   const UserActionSheet({super.key, required this.user});
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
@@ -17,34 +15,19 @@ class UserActionSheet extends StatelessWidget {
         children: <Widget>[
           ListTile(
             leading: const Icon(Icons.edit),
-            title: const Text(AppStrings.edit),
+            title: const Text('Sửa'),
             onTap: () {
               Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (context) => UserFormDialog(
-                  title: AppStrings.editUser,
-                  user: user,
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.visibility),
-            title: const Text(AppStrings.view),
-            onTap: () {
-              Navigator.pop(context);
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (context) => UserDetails(user: user),
+              Navigator.pushNamed(
+                context,
+                AppRoutes.userDetail,
+                // arguments: {'id': user.id},
               );
             },
           ),
           ListTile(
             leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text(AppStrings.delete, 
-              style: TextStyle(color: Colors.red)),
+            title: const Text('Xoá', style: TextStyle(color: Colors.red)),
             onTap: () {
               Navigator.pop(context);
               _showDeleteConfirmation(context);
@@ -59,12 +42,12 @@ class UserActionSheet extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(AppStrings.deleteConfirmation),
-        content: Text('${AppStrings.deleteUserConfirmation} ${user.name}?'),
+        title: const Text('Xoá người dùng'),
+        content: Text('Bạn có chắc chắn muốn xoá người dùng ${user.fullName}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.no),
+            child: const Text('Không'),
           ),
           TextButton(
             onPressed: () {
@@ -72,7 +55,7 @@ class UserActionSheet extends StatelessWidget {
               // Delete user logic
             },
             child: Text(
-              AppStrings.yes,
+              'Có',
               style: TextStyle(color: Colors.red[700]),
             ),
           ),
@@ -80,4 +63,4 @@ class UserActionSheet extends StatelessWidget {
       ),
     );
   }
-} 
+}
