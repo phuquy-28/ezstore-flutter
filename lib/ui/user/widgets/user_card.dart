@@ -1,5 +1,6 @@
 import 'package:ezstore_flutter/domain/models/user.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../config/constants.dart';
 import 'user_action_sheet.dart';
 
@@ -14,7 +15,7 @@ class UserCard extends StatelessWidget {
   }) : super(key: key);
 
   Color getRoleColor() {
-    switch (user.role) {
+    switch (user.role.name) {
       case AppStrings.roleAdmin:
         return AppColors.roleAdmin;
       case AppStrings.roleManager:
@@ -52,7 +53,7 @@ class UserCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.firstName,
+                          '${user.lastName} ${user.firstName}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -81,7 +82,10 @@ class UserCard extends StatelessWidget {
                   Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
-                    user.birthDate ?? '',
+                    user.birthDate != null
+                        ? DateFormat('dd/MM/yyyy')
+                            .format(DateTime.parse(user.birthDate!))
+                        : '',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -111,8 +115,7 @@ class UserCard extends StatelessWidget {
                   border: Border.all(color: getRoleColor()),
                 ),
                 child: Text(
-                  // user.role.name,
-                  'Admin',
+                  user.role.name,
                   style: TextStyle(
                     color: getRoleColor(),
                     fontWeight: FontWeight.bold,

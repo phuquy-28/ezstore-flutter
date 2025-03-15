@@ -1,7 +1,7 @@
 import 'package:ezstore_flutter/config/constants.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
-import 'package:ezstore_flutter/ui/user/widgets/search_field.dart';
+import 'package:ezstore_flutter/ui/core/shared/search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -162,6 +162,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
               setState(() {
                 searchQuery = value;
               });
+            },
+            onSubmitted: (value) {
+              // Tạm bỏ qua xử lý
+            },
+            onClear: () {
+              // Tạm bỏ qua xử lý
             },
           ),
           Expanded(

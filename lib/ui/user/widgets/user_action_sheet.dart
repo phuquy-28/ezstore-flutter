@@ -1,6 +1,6 @@
 import 'package:ezstore_flutter/domain/models/user.dart';
+import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
 import 'package:flutter/material.dart';
-import '../../../routing/app_routes.dart';
 
 class UserActionSheet extends StatelessWidget {
   final User user;
@@ -18,10 +18,14 @@ class UserActionSheet extends StatelessWidget {
             title: const Text('Sửa'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(
+              Navigator.push(
                 context,
-                AppRoutes.userDetail,
-                // arguments: {'id': user.id},
+                MaterialPageRoute(
+                  builder: (context) => UserDetailScreen(
+                    isEditMode: true,
+                    userId: user.id,
+                  ),
+                ),
               );
             },
           ),

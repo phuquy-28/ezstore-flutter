@@ -1,12 +1,15 @@
+import 'package:ezstore_flutter/domain/models/user.dart';
+import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart';
 import '../../drawer/widgets/custom_drawer.dart';
 import '../../core/shared/custom_app_bar.dart';
 import '../../../config/constants.dart';
-import 'search_field.dart';
+import '../../core/shared/search_field.dart';
 import 'user_card.dart';
 import 'add_user_screen.dart';
+import 'user_detail_screen.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({Key? key}) : super(key: key);
@@ -24,11 +27,14 @@ class _UserScreenState extends State<UserScreen> {
     super.initState();
     // Theo dõi sự kiện cuộn
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels ==
-          _scrollController.position.maxScrollExtent) {
-        // Gọi loadMoreUsers khi cuộn đến cuối trang
-        Provider.of<UserScreenViewModel>(context, listen: false)
-            .loadMoreUsers();
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        // Gọi loadMoreUsers khi cuộn gần đến cuối trang
+        final viewModel =
+            Provider.of<UserScreenViewModel>(context, listen: false);
+        if (!viewModel.isLoading && viewModel.hasMoreData) {
+          viewModel.loadMoreData();
+        }
       }
     });
   }
@@ -47,7 +53,7 @@ class _UserScreenState extends State<UserScreen> {
       _isInitialized = true;
       // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
       Future.microtask(() {
-        Provider.of<UserScreenViewModel>(context, listen: false).fetchUsers();
+        Provider.of<UserScreenViewModel>(context, listen: false).loadData();
       });
     }
   }
@@ -72,71 +78,176 @@ class _UserScreenState extends State<UserScreen> {
       drawer: CustomDrawer(),
       body: Column(
         children: [
-          SearchField(
-            onChanged: (value) => {},
-          ),
-          if (viewModel.isLoading && viewModel.users == null)
-            // Hiển thị loading khi đang tải dữ liệu lần đầu
-            Expanded(
+          if (viewModel.isLoading && viewModel.items == null)
+            const Expanded(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (viewModel.users?.isEmpty ?? true)
-            // Hiển thị thông báo khi danh sách rỗng
+          else if (viewModel.errorMessage != null)
             Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.person_off,
+                    const Icon(
+                      Icons.error_outline,
                       size: 64,
-                      color: Colors.grey,
+                      color: Colors.red,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
-                      "Danh sách người dùng rỗng",
+                      "Đã xảy ra lỗi",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[700],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      "Không tìm thấy người dùng nào",
+                      viewModel.errorMessage!,
                       style: TextStyle(
                         color: Colors.grey[600],
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => viewModel.loadData(),
+                      child: const Text("Thử lại"),
                     ),
                   ],
                 ),
               ),
             )
           else
-            // Hiển thị danh sách người dùng
             Expanded(
-              child: ListView.separated(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(AppSizes.paddingNormal),
-                itemCount: viewModel.users?.length ?? 0,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: AppSizes.paddingSmall),
-                itemBuilder: (context, index) {
-                  final user = viewModel.users![index];
-                  return UserCard(
-                    user: user,
-                    onViewDetails: () {
-                      // Bỏ qua logic điều hướng
-                    },
+              child: PaginatedListView<User>(
+                items: viewModel.items ?? [],
+                isLoading: viewModel.isLoading,
+                hasMoreData: viewModel.hasMoreData,
+                onLoadMore: () => viewModel.loadMoreData(),
+                onRefresh: () => viewModel.refresh(),
+                padding: const EdgeInsets.all(0),
+                separatorHeight: AppSizes.paddingSmall,
+                headerBuilder: (context) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SearchField(
+                      hintText: "Tìm kiếm theo email, tên",
+                      onChanged: (value) {
+                        // Không làm gì khi thay đổi, chỉ cập nhật UI
+                      },
+                      onSubmitted: (value) {
+                        // Gọi tìm kiếm khi người dùng nhấn Enter
+                        viewModel.searchUsers(value);
+                      },
+                      onClear: () {
+                        // Xóa tìm kiếm và tải lại dữ liệu ban đầu
+                        viewModel.clearSearch();
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: AppSizes.paddingNormal,
+                        right: AppSizes.paddingNormal,
+                        bottom: AppSizes.paddingSmall,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            viewModel.searchKeyword != null
+                                ? "Kết quả tìm kiếm: ${viewModel.totalItems} người dùng"
+                                : "Tổng số: ${viewModel.totalItems} người dùng",
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (viewModel.searchKeyword != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              "cho '${viewModel.searchKeyword}'",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontStyle: FontStyle.italic,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.paddingNormal),
+                      child: SizedBox(),
+                    ),
+                  ],
+                ),
+                itemBuilder: (context, user, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.paddingNormal),
+                    child: UserCard(
+                      user: user,
+                      onViewDetails: () {
+                        // Mở UserDetailScreen ở chế độ xem khi nhấn vào UserCard
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UserDetailScreen(
+                              isEditMode: false,
+                              userId: user.id,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
+                emptyWidget: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.person_off,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        viewModel.searchKeyword != null
+                            ? "Không tìm thấy kết quả"
+                            : "Danh sách người dùng rỗng",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        viewModel.searchKeyword != null
+                            ? "Không tìm thấy người dùng nào phù hợp với '${viewModel.searchKeyword}'"
+                            : "Không tìm thấy người dùng nào",
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                endOfListWidget: Text(
+                  viewModel.searchKeyword != null
+                      ? "Đã hiển thị tất cả ${viewModel.totalItems} kết quả cho '${viewModel.searchKeyword}'"
+                      : "Đã hiển thị tất cả ${viewModel.totalItems} người dùng",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ),
-            ),
-          if (viewModel.isLoading &&
-              viewModel.users != null) // Hiển thị loading khi tải thêm
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Center(child: CircularProgressIndicator()),
             ),
         ],
       ),

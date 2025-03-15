@@ -17,14 +17,25 @@ class UserService {
     );
   }
 
-  // Phương thức này sẽ được thêm vào nhưng không được sử dụng vì chúng ta đang dùng mock data
-  Future<ApiResponse<PaginatedResponse<User>>> getAllUsers({int page = 0}) async {
-    // Phương thức này sẽ không được gọi vì chúng ta đang sử dụng mock data
-    return ApiResponse(
-      statusCode: 501,
-      error: 'Not Implemented',
-      message: 'Đang sử dụng mock data, không gọi API thực tế',
-      data: null,
+  // Cập nhật phương thức để hỗ trợ tìm kiếm
+  Future<ApiResponse<PaginatedResponse<User>>> getAllUsers({
+    int page = 0,
+    int pageSize = 10,
+    String? keyword,
+  }) async {
+    String path = '${ApiConstants.users}?page=$page&size=$pageSize';
+
+    // Thêm bộ lọc tìm kiếm nếu có từ khóa
+    if (keyword != null && keyword.isNotEmpty) {
+      path += "&filter=email~'$keyword' or profile.fullName~'$keyword'";
+    }
+
+    return await _api.get(
+      path: path,
+      fromJson: (json) => PaginatedResponse<User>.fromJson(
+        json,
+        (userJson) => User.fromJson(userJson),
+      ),
     );
   }
 }
