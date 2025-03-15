@@ -8,13 +8,25 @@ class UserRepository {
 
   UserRepository(this._userService);
 
-  Future<UserInfoResponse> getUserInfo() async {
-    return await _userService.getUserInfo();
+  Future<UserInfoResponse?> getUserInfo() async {
+    final response = await _userService.getUserInfo();
+    
+    if (response.statusCode == 200 && response.data != null) {
+      return response.data;
+    }
+    
+    return null;
   }
 
   // Phương thức này sẽ được thay thế bằng mock data trong ViewModel
-  Future<PaginatedResponse<User>> getAllUsers({int page = 0}) async {
+  Future<PaginatedResponse<User>?> getAllUsers({int page = 0}) async {
+    final response = await _userService.getAllUsers(page: page);
+    
+    if (response.statusCode == 200 && response.data != null) {
+      return response.data;
+    }
+    
     // Phương thức này sẽ không được gọi vì chúng ta đang sử dụng mock data
-    throw UnimplementedError('Đang sử dụng mock data, không gọi API thực tế');
+    return null;
   }
 }

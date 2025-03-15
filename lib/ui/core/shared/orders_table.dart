@@ -51,7 +51,9 @@ class OrdersTable extends StatelessWidget {
     ];
   }
 
-  Color _getPaymentStatusColor(PaymentStatus status) {
+  Color _getPaymentStatusColor(PaymentStatus? status) {
+    if (status == null) return Colors.grey;
+    
     switch (status) {
       case PaymentStatus.SUCCESS:
         return Colors.green;
@@ -62,7 +64,9 @@ class OrdersTable extends StatelessWidget {
     }
   }
 
-  Color _getOrderStatusColor(OrderStatus status) {
+  Color _getOrderStatusColor(OrderStatus? status) {
+    if (status == null) return Colors.grey;
+    
     switch (status) {
       case OrderStatus.PROCESSING:
         return Colors.blue;
@@ -129,7 +133,7 @@ class OrdersTable extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              order.paymentStatus.toString().split('.').last,
+              order.paymentStatus?.toString().split('.').last ?? 'UNKNOWN',
               style: TextStyle(
                 color: _getPaymentStatusColor(order.paymentStatus),
                 fontSize: 12,
@@ -145,7 +149,7 @@ class OrdersTable extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              order.orderStatus.toString().split('.').last,
+              order.orderStatus?.toString().split('.').last ?? 'UNKNOWN',
               style: TextStyle(
                 color: _getOrderStatusColor(order.orderStatus),
                 fontSize: 12,
@@ -154,8 +158,8 @@ class OrdersTable extends StatelessWidget {
           ),
         ),
         DataCell(Text(order.quantity)),
-        DataCell(Text(order.paymentMethod.toString().split('.').last)),
-        DataCell(Text(order.shippingMethod.toString().split('.').last)),
+        DataCell(Text(order.paymentMethod?.toString().split('.').last ?? 'UNKNOWN')),
+        DataCell(Text(order.shippingMethod?.toString().split('.').last ?? 'UNKNOWN')),
       ],
     );
   }

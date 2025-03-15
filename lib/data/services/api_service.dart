@@ -70,50 +70,6 @@ class ApiService {
     handler.next(error);
   }
 
-  Future<T> request<T>({
-    required String path,
-    required String method,
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    required T Function(Map<String, dynamic>) fromJson,
-  }) async {
-    try {
-      final response = await _dio.request(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: Options(method: method),
-      );
-
-      final apiResponse = ApiResponse<T>.fromJson(
-        response.data,
-        fromJson,
-      );
-
-      if (apiResponse.error != null) {
-        throw ApiException(
-          apiResponse.statusCode,
-          apiResponse.error!,
-        );
-      }
-
-      if (apiResponse.statusCode < 200 || apiResponse.statusCode >= 300) {
-        throw ApiException(
-          apiResponse.statusCode,
-          apiResponse.message,
-        );
-      }
-
-      if (apiResponse.data == null) {
-        return null as T;
-      }
-
-      return apiResponse.data!;
-    } catch (e) {
-      throw _handleError(e);
-    }
-  }
-
   Exception _handleError(dynamic error) {
     if (error is ApiException) return error;
     if (error is DioException) {
@@ -137,61 +93,117 @@ class ApiService {
   }
 
   // Helper methods
-  Future<T> get<T>({
+  Future<ApiResponse<T>> get<T>({
     required String path,
     Map<String, dynamic>? queryParameters,
     required T Function(Map<String, dynamic>) fromJson,
   }) async {
-    return request<T>(
-      path: path,
-      method: 'GET',
-      queryParameters: queryParameters,
-      fromJson: fromJson,
-    );
+    try {
+      final response = await _dio.get(
+        path,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.fromJson(response.data, fromJson);
+    } catch (e) {
+      final error = _handleError(e);
+      dev.log(
+        '${AppLogs.red}⨉ GET ERROR [${path}]: ${error.toString()}${AppLogs.reset}',
+        name: 'API',
+        error: e,
+      );
+      return ApiResponse(
+        statusCode: error is ApiException ? error.statusCode : 500,
+        error: error.toString(),
+        message: error is ApiException ? error.message : 'Đã có lỗi xảy ra',
+        data: null,
+      );
+    }
   }
 
-  Future<T> post<T>({
+  Future<ApiResponse<T>> post<T>({
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
     required T Function(Map<String, dynamic>) fromJson,
   }) async {
-    return request<T>(
-      path: path,
-      method: 'POST',
-      data: data,
-      queryParameters: queryParameters,
-      fromJson: fromJson,
-    );
+    try {
+      final response = await _dio.post(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.fromJson(response.data, fromJson);
+    } catch (e) {
+      final error = _handleError(e);
+      dev.log(
+        '${AppLogs.red}⨉ POST ERROR [${path}]: ${error.toString()}${AppLogs.reset}',
+        name: 'API',
+        error: e,
+      );
+      return ApiResponse(
+        statusCode: error is ApiException ? error.statusCode : 500,
+        error: error.toString(),
+        message: error is ApiException ? error.message : 'Đã có lỗi xảy ra',
+        data: null,
+      );
+    }
   }
 
-  Future<T> put<T>({
+  Future<ApiResponse<T>> put<T>({
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
     required T Function(Map<String, dynamic>) fromJson,
   }) async {
-    return request<T>(
-      path: path,
-      method: 'PUT',
-      data: data,
-      queryParameters: queryParameters,
-      fromJson: fromJson,
-    );
+    try {
+      final response = await _dio.put(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.fromJson(response.data, fromJson);
+    } catch (e) {
+      final error = _handleError(e);
+      dev.log(
+        '${AppLogs.red}⨉ PUT ERROR [${path}]: ${error.toString()}${AppLogs.reset}',
+        name: 'API',
+        error: e,
+      );
+      return ApiResponse(
+        statusCode: error is ApiException ? error.statusCode : 500,
+        error: error.toString(),
+        message: error is ApiException ? error.message : 'Đã có lỗi xảy ra',
+        data: null,
+      );
+    }
   }
 
-  Future<T> delete<T>({
+  Future<ApiResponse<T>> delete<T>({
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
     required T Function(Map<String, dynamic>) fromJson,
   }) async {
-    return request<T>(
-      path: path,
-      method: 'DELETE',
-      data: data,
-      queryParameters: queryParameters,
-      fromJson: fromJson,
-    );
+    try {
+      final response = await _dio.delete(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.fromJson(response.data, fromJson);
+    } catch (e) {
+      final error = _handleError(e);
+      dev.log(
+        '${AppLogs.red}⨉ DELETE ERROR [${path}]: ${error.toString()}${AppLogs.reset}',
+        name: 'API',
+        error: e,
+      );
+      return ApiResponse(
+        statusCode: error is ApiException ? error.statusCode : 500,
+        error: error.toString(),
+        message: error is ApiException ? error.message : 'Đã có lỗi xảy ra',
+        data: null,
+      );
+    }
   }
 }

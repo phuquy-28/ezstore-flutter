@@ -1,8 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'user_info_response.g.dart';
-
-@JsonSerializable()
 class UserInfoResponse {
   final String email;
   final String firstName;
@@ -18,8 +13,25 @@ class UserInfoResponse {
     required this.cartItemsCount,
   });
 
-  factory UserInfoResponse.fromJson(Map<String, dynamic> json) =>
-      _$UserInfoResponseFromJson(json);
+  factory UserInfoResponse.fromJson(Map<String, dynamic> json) {
+    return UserInfoResponse(
+      email: json['email'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      role: json['role'],
+      cartItemsCount: (json['cartItemsCount'] as num).toInt(),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$UserInfoResponseToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'firstName': firstName,
+      'lastName': lastName,
+      'role': role,
+      'cartItemsCount': cartItemsCount,
+    };
+  }
+
+  String get fullName => '$firstName $lastName';
 }

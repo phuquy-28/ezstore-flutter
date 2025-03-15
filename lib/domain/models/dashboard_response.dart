@@ -1,8 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'dashboard_response.g.dart';
-
-@JsonSerializable()
 class DashboardResponse {
   final num totalUsers;
   final num totalOrders;
@@ -16,8 +11,21 @@ class DashboardResponse {
     required this.totalProducts,
   });
 
-  factory DashboardResponse.fromJson(Map<String, dynamic> json) =>
-      _$DashboardResponseFromJson(json);
+  factory DashboardResponse.fromJson(Map<String, dynamic> json) {
+    return DashboardResponse(
+      totalUsers: json['totalUsers'] ?? 0,
+      totalOrders: json['totalOrders'] ?? 0,
+      totalRevenue: json['totalRevenue'] ?? 0,
+      totalProducts: json['totalProducts'] ?? 0,
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$DashboardResponseToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'totalUsers': totalUsers,
+      'totalOrders': totalOrders,
+      'totalRevenue': totalRevenue,
+      'totalProducts': totalProducts,
+    };
+  }
 }

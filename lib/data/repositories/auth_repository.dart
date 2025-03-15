@@ -7,19 +7,50 @@ class AuthRepository {
 
   AuthRepository(this._authService, this._preferenceService);
 
-  Future<void> login(String email, String password) async {
-    final authData = await _authService.login(email, password);
-    await _preferenceService.setTokens(
-      authData.accessToken,
-      authData.refreshToken,
-    );
+  Future<bool> login(String email, String password) async {
+    final response = await _authService.login(email, password);
+    
+    if (response.statusCode == 200 && response.data != null) {
+      await _preferenceService.setTokens(
+        response.data!.accessToken,
+        response.data!.refreshToken,
+      );
+      return true;
+    }
+    
+    return false;
   }
 
-  Future<void> logout() async {
+  Future<bool> logout() async {
     final refreshToken = _preferenceService.getRefreshToken();
     if (refreshToken != null) {
-      await _authService.logout(refreshToken);
+      final response = await _authService.logout(refreshToken);
+      if (response.statusCode != 200) {
+        // Vẫn xóa token ngay cả khi API thất bại
+        await _preferenceService.clearTokens();
+        return false;
+      }
     }
+    
     await _preferenceService.clearTokens();
+    return true;
+  }
+  
+  Future<bool> refreshToken() async {
+    final response = await _authService.refreshToken();
+    
+    if (response.statusCode == 200 && response.data != null) {
+      await _preferenceService.setTokens(
+        response.data!.accessToken,
+        response.data!.refreshToken,
+      );
+      return true;
+    }
+    
+    return false;
+  }
+  
+  bool isLoggedIn() {
+    return _preferenceService.getAccessToken() != null;
   }
 }
