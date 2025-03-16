@@ -24,53 +24,150 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    final userInfoProvider =
-        Provider.of<UserInfoProvider>(context, listen: false);
 
-    // Gọi API đồng thời chỉ một lần
-    Future.wait([
-      userInfoProvider.fetchUserInfo(),
-      Provider.of<DashboardViewModel>(context, listen: false)
-          .fetchDashboardData(),
-      Provider.of<DashboardViewModel>(context, listen: false)
-          .fetchRevenueData(selectedYear),
-    ]).then((_) {
-      // Cập nhật giao diện người dùng nếu cần
-      setState(() {});
-    }).catchError((error) {
-      // Xử lý lỗi nếu có
-      print('Đã xảy ra lỗi: $error');
+    // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
+    Future.microtask(() {
+      final userInfoProvider =
+          Provider.of<UserInfoProvider>(context, listen: false);
+      final dashboardViewModel =
+          Provider.of<DashboardViewModel>(context, listen: false);
+
+      // Gọi API đồng thời chỉ một lần
+      Future.wait([
+        userInfoProvider.fetchUserInfo(),
+        dashboardViewModel.fetchDashboardData(),
+        dashboardViewModel.fetchRevenueData(selectedYear),
+      ]).then((_) {
+        // Kiểm tra lỗi sau khi tất cả các API đã được gọi
+        if (dashboardViewModel.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Đã xảy ra lỗi: ${dashboardViewModel.errorMessage}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // final dashboardViewModel = Provider.of<DashboardViewModel>(context);
-
     return Scaffold(
       appBar: CustomAppBar(title: AppStrings.appName),
       drawer: CustomDrawer(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeSection(),
-              const SizedBox(height: 24),
-              Consumer<DashboardViewModel>(
-                builder: (context, dashboardViewModel, child) {
-                  final dashboardData = dashboardViewModel.dashboardData;
-                  return _buildMetrics(dashboardData);
-                },
+      body: Consumer<DashboardViewModel>(
+        builder: (context, dashboardViewModel, child) {
+          // Nếu có lỗi, hiển thị màn hình lỗi
+          if (dashboardViewModel.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Đã xảy ra lỗi",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    dashboardViewModel.errorMessage!,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final userInfoProvider =
+                          Provider.of<UserInfoProvider>(context, listen: false);
+
+                      // Tải lại dữ liệu khi người dùng nhấn "Thử lại"
+                      Future.wait([
+                        userInfoProvider.fetchUserInfo(),
+                        dashboardViewModel.fetchDashboardData(),
+                        dashboardViewModel.fetchRevenueData(selectedYear),
+                      ]);
+                    },
+                    child: const Text("Thử lại"),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              _buildRevenueChart(),
-              const SizedBox(height: 24),
-              _buildLatestOrders(),
-            ],
-          ),
-        ),
+            );
+          }
+
+          // Nếu đang tải dữ liệu ban đầu, hiển thị màn hình loading
+          if (dashboardViewModel.isLoading &&
+              dashboardViewModel.dashboardData == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Hiển thị nội dung chính với RefreshIndicator
+          return RefreshIndicator(
+            onRefresh: () async {
+              try {
+                final userInfoProvider =
+                    Provider.of<UserInfoProvider>(context, listen: false);
+
+                // Gọi API để làm mới thông tin người dùng
+                await userInfoProvider.fetchUserInfo();
+
+                // Gọi phương thức mới để làm mới tất cả dữ liệu dashboard
+                await dashboardViewModel.refreshAllData(selectedYear);
+
+                // Kiểm tra lỗi sau khi làm mới
+                if (dashboardViewModel.errorMessage != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Đã xảy ra lỗi: ${dashboardViewModel.errorMessage}'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã xảy ra lỗi: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildWelcomeSection(),
+                    const SizedBox(height: 24),
+                    _buildMetrics(dashboardViewModel.dashboardData),
+                    const SizedBox(height: 24),
+                    _buildRevenueChart(),
+                    const SizedBox(height: 24),
+                    _buildLatestOrders(),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -188,6 +285,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Consumer<DashboardViewModel>(
             builder: (context, dashboardViewModel, child) {
               final revenueData = dashboardViewModel.revenueData;
+
+              // Nếu revenueData là null và không đang tải, gọi fetchRevenueData
+              if (revenueData == null && !dashboardViewModel.isLoading) {
+                // Sử dụng Future.microtask để tránh gọi trong quá trình build
+                Future.microtask(() {
+                  dashboardViewModel.fetchRevenueData(selectedYear);
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
 
               return LineChart(
                 LineChartData(
