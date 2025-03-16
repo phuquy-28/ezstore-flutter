@@ -8,6 +8,7 @@ class DetailTextField extends StatelessWidget {
   final bool obscureText;
   final Color? textColor;
   final Color? fillColor;
+  final String? Function(String?)? validator;
 
   const DetailTextField({
     super.key,
@@ -18,6 +19,7 @@ class DetailTextField extends StatelessWidget {
     this.obscureText = false,
     this.textColor,
     this.fillColor,
+    this.validator,
   });
 
   @override
@@ -34,10 +36,11 @@ class DetailTextField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
           enabled: enabled,
           obscureText: obscureText,
+          validator: validator,
           style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             hintText: hintText,

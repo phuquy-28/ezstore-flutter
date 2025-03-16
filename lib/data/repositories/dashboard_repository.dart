@@ -1,6 +1,6 @@
 import 'package:ezstore_flutter/data/services/dashboard_service.dart';
-import 'package:ezstore_flutter/domain/models/dashboard_response.dart';
-import 'package:ezstore_flutter/domain/models/revenue_response.dart';
+import 'package:ezstore_flutter/domain/models/dashboard/dashboard_response.dart';
+import 'package:ezstore_flutter/domain/models/dashboard/revenue_response.dart';
 
 class DashboardRepository {
   final DashboardService _dashboardService;

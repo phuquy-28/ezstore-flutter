@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../domain/models/order_response.dart';
+import '../../../domain/models/order/order_response.dart';
 import '../../../domain/enums/payment_status.dart';
 import '../../../domain/enums/order_status.dart';
 import '../../../domain/enums/payment_method.dart';

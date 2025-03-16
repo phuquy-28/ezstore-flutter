@@ -1,4 +1,4 @@
-import 'package:ezstore_flutter/domain/models/user.dart';
+import 'package:ezstore_flutter/domain/models/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../config/constants.dart';

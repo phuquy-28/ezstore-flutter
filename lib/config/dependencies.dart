@@ -2,6 +2,8 @@ import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
 import 'package:ezstore_flutter/data/services/dashboard_service.dart';
 import 'package:ezstore_flutter/data/services/user_service.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
+import 'package:ezstore_flutter/ui/user/view_models/add_user_view_model.dart';
+import 'package:ezstore_flutter/ui/user/view_models/user_detail_view_model.dart';
 import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -59,6 +61,14 @@ List<SingleChildWidget> get providers {
             )),
     ChangeNotifierProvider(
         create: (context) => UserScreenViewModel(
+              context.read<UserRepository>(),
+            )),
+    ChangeNotifierProvider(
+        create: (context) => UserDetailViewModel(
+              context.read<UserRepository>(),
+            )),
+    ChangeNotifierProvider(
+        create: (context) => AddUserViewModel(
               context.read<UserRepository>(),
             )),
   ];

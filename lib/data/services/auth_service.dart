@@ -1,4 +1,4 @@
-import 'package:ezstore_flutter/domain/models/auth_response.dart';
+import 'package:ezstore_flutter/domain/models/auth/auth_response.dart';
 import 'package:ezstore_flutter/data/models/api_response.dart';
 import 'api_service.dart';
 import '../../config/constants.dart';

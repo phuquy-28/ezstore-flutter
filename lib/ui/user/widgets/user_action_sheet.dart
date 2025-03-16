@@ -1,6 +1,8 @@
-import 'package:ezstore_flutter/domain/models/user.dart';
+import 'package:ezstore_flutter/domain/models/user/user.dart';
 import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
+import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UserActionSheet extends StatelessWidget {
   final User user;
@@ -56,7 +58,7 @@ class UserActionSheet extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Delete user logic
+              _deleteUser(context);
             },
             child: Text(
               'Có',
@@ -66,5 +68,56 @@ class UserActionSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _deleteUser(BuildContext context) async {
+    // Lưu trữ context trong một biến để kiểm tra sau này
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final viewModel = Provider.of<UserScreenViewModel>(context, listen: false);
+
+    // Hiển thị dialog loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Đang xóa người dùng...'),
+          ],
+        ),
+      ),
+    );
+
+    // Gọi phương thức xóa người dùng
+    final success = await viewModel.deleteUser(user.id);
+
+    // Kiểm tra xem context còn hợp lệ không trước khi sử dụng
+    if (navigator.mounted) {
+      // Đóng dialog loading
+      navigator.pop();
+
+      // Hiển thị thông báo kết quả
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Xóa người dùng thành công'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+                'Lỗi: ${viewModel.deleteErrorMessage ?? "Không thể xóa người dùng"}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

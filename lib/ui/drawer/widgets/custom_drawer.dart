@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../config/constants.dart';
 import '../../../routing/app_routes.dart';
 import '../../../ui/drawer/viewmodel/drawer_viewmodel.dart';
-import '../../../domain/models/user_info_response.dart';
+import '../../../domain/models/user/user_info_response.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});

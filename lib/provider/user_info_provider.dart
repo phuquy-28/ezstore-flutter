@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/repositories/user_repository.dart';
-import '../domain/models/user_info_response.dart';
+import '../domain/models/user/user_info_response.dart';
 
 class UserInfoProvider with ChangeNotifier {
   final UserRepository _userRepository;

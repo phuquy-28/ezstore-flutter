@@ -1,4 +1,4 @@
-import 'package:ezstore_flutter/domain/models/dashboard_response.dart';
+import 'package:ezstore_flutter/domain/models/dashboard/dashboard_response.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';

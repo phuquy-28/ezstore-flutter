@@ -1,4 +1,4 @@
-import 'package:ezstore_flutter/domain/models/user.dart';
+import 'package:ezstore_flutter/domain/models/user/user.dart';
 import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

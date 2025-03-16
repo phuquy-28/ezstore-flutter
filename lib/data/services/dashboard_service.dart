@@ -1,7 +1,7 @@
 import 'package:ezstore_flutter/config/constants.dart';
 import 'package:ezstore_flutter/data/services/api_service.dart';
-import 'package:ezstore_flutter/domain/models/dashboard_response.dart';
-import 'package:ezstore_flutter/domain/models/revenue_response.dart';
+import 'package:ezstore_flutter/domain/models/dashboard/dashboard_response.dart';
+import 'package:ezstore_flutter/domain/models/dashboard/revenue_response.dart';
 import 'package:ezstore_flutter/data/models/api_response.dart';
 
 class DashboardService {

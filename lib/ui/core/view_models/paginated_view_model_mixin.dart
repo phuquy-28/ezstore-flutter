@@ -89,6 +89,11 @@ mixin PaginatedViewModelMixin<T> on ChangeNotifier {
     _hasMoreData = true;
     await loadData();
   }
+
+  void setItems(List<T> newItems, int newTotalItems) {
+    _items = newItems;
+    _totalItems = newTotalItems;
+  }
 }
 
 class PaginationResult<T> {

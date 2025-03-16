@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/repositories/dashboard_repository.dart';
-import '../../../domain/models/dashboard_response.dart';
-import '../../../domain/models/revenue_response.dart';
+import '../../../domain/models/dashboard/dashboard_response.dart';
+import '../../../domain/models/dashboard/revenue_response.dart';
 
 class DashboardViewModel with ChangeNotifier {
   final DashboardRepository _dashboardRepository;
