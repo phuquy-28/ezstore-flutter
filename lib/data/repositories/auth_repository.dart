@@ -1,5 +1,6 @@
 import '../services/auth_service.dart';
 import '../services/shared_preference_service.dart';
+import 'dart:developer' as dev;
 
 class AuthRepository {
   final AuthService _authService;
@@ -8,48 +9,65 @@ class AuthRepository {
   AuthRepository(this._authService, this._preferenceService);
 
   Future<bool> login(String email, String password) async {
-    final response = await _authService.login(email, password);
-    
-    if (response.statusCode == 200 && response.data != null) {
-      await _preferenceService.setTokens(
-        response.data!.accessToken,
-        response.data!.refreshToken,
-      );
-      return true;
+    try {
+      final response = await _authService.login(email, password);
+
+      if (response.statusCode == 200 && response.data != null) {
+        await _preferenceService.setTokens(
+          response.data!.accessToken,
+          response.data!.refreshToken,
+        );
+        return true;
+      }
+
+      final errors = response.message.split(',');
+      throw Exception(errors.first);
+    } catch (e) {
+      dev.log('Exception khi đăng nhập: $e');
+      rethrow;
     }
-    
-    return false;
   }
 
   Future<bool> logout() async {
-    final refreshToken = _preferenceService.getRefreshToken();
-    if (refreshToken != null) {
-      final response = await _authService.logout(refreshToken);
-      if (response.statusCode != 200) {
-        // Vẫn xóa token ngay cả khi API thất bại
-        await _preferenceService.clearTokens();
-        return false;
+    try {
+      final refreshToken = _preferenceService.getRefreshToken();
+      if (refreshToken != null) {
+        final response = await _authService.logout(refreshToken);
+
+        if (response.statusCode != 200) {
+          final errors = response.message.split(',');
+          throw Exception(errors.first);
+        }
       }
-    }
-    
-    await _preferenceService.clearTokens();
-    return true;
-  }
-  
-  Future<bool> refreshToken() async {
-    final response = await _authService.refreshToken();
-    
-    if (response.statusCode == 200 && response.data != null) {
-      await _preferenceService.setTokens(
-        response.data!.accessToken,
-        response.data!.refreshToken,
-      );
+
+      await _preferenceService.clearTokens();
       return true;
+    } catch (e) {
+      dev.log('Exception khi đăng xuất: $e');
+      rethrow;
     }
-    
-    return false;
   }
-  
+
+  Future<bool> refreshToken() async {
+    try {
+      final response = await _authService.refreshToken();
+
+      if (response.statusCode == 200 && response.data != null) {
+        await _preferenceService.setTokens(
+          response.data!.accessToken,
+          response.data!.refreshToken,
+        );
+        return true;
+      }
+
+      final errors = response.message.split(',');
+      throw Exception(errors.first);
+    } catch (e) {
+      dev.log('Exception khi làm mới token: $e');
+      rethrow;
+    }
+  }
+
   bool isLoggedIn() {
     return _preferenceService.getAccessToken() != null;
   }

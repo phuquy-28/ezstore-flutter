@@ -32,23 +32,48 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    final viewModel = context.read<DrawerViewModel>();
-    final success = await viewModel.logout();
+    // Hiển thị hộp thoại xác nhận
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Đăng xuất'),
+          content: const Text('Bạn có chắc chắn muốn đăng xuất ?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child:
+                  const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
 
-    if (context.mounted) {
-      if (success) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-          (route) => false,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(viewModel.error ?? 'Đã có lỗi xảy ra'),
-            backgroundColor: Colors.red,
-          ),
-        );
+    // Nếu người dùng xác nhận đăng xuất
+    if (confirm == true) {
+      final viewModel = context.read<DrawerViewModel>();
+      final success = await viewModel.logout();
+
+      if (context.mounted) {
+        if (success) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(viewModel.error ?? 'Đã có lỗi xảy ra'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

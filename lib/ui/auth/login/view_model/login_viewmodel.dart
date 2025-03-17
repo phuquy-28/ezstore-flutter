@@ -38,14 +38,20 @@ class LoginViewModel extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      await _authRepository.login(
+      final loginSuccess = await _authRepository.login(
         emailController.text.trim(),
         passwordController.text,
       );
 
+      if (!loginSuccess) {
+        _error =
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.";
+        return false;
+      }
+
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;
