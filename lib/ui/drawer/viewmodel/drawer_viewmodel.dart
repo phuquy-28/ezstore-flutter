@@ -10,15 +10,9 @@ class DrawerViewModel extends ChangeNotifier {
   String? get error => _error;
 
   Future<bool> logout() async {
-    try {
-      await _authRepository.logout();
-      _error = null;
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
+    await _authRepository.logout();
+    _error = null;
+    return true;
   }
 
   void clearError() {

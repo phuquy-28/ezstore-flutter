@@ -29,23 +29,13 @@ class AuthRepository {
   }
 
   Future<bool> logout() async {
-    try {
-      final refreshToken = _preferenceService.getRefreshToken();
-      if (refreshToken != null) {
-        final response = await _authService.logout(refreshToken);
-
-        if (response.statusCode != 200) {
-          final errors = response.message.split(',');
-          throw Exception(errors.first);
-        }
-      }
-
-      await _preferenceService.clearTokens();
-      return true;
-    } catch (e) {
-      dev.log('Exception khi đăng xuất: $e');
-      rethrow;
+    final refreshToken = _preferenceService.getRefreshToken();
+    if (refreshToken != null) {
+      await _authService.logout(refreshToken);
     }
+
+    await _preferenceService.clearTokens();
+    return true;
   }
 
   Future<bool> refreshToken() async {

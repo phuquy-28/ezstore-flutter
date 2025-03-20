@@ -21,6 +21,7 @@ class PaginatedListView<T> extends StatefulWidget {
   final Widget Function(BuildContext, int)? separatorBuilder;
   final double? separatorHeight;
   final HeaderBuilder? headerBuilder;
+  final bool showEmptyWidget;
 
   const PaginatedListView({
     Key? key,
@@ -38,6 +39,7 @@ class PaginatedListView<T> extends StatefulWidget {
     this.separatorBuilder,
     this.separatorHeight,
     this.headerBuilder,
+    this.showEmptyWidget = true,
   }) : super(key: key);
 
   @override
@@ -71,7 +73,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.items.isEmpty) {
+    if (widget.items.isEmpty && widget.showEmptyWidget) {
       return widget.emptyWidget ??
           Center(
             child: Column(
@@ -95,7 +97,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
     // Tính toán số lượng item thực tế trong ListView
     int itemCount = widget.items.length +
         (widget.headerBuilder != null ? 1 : 0) +
-        (!widget.hasMoreData ? 1 : 0); // Thêm 1 cho thông báo cuối danh sách
+        (!widget.hasMoreData && widget.items.isNotEmpty ? 1 : 0); // Chỉ hiển thị thông báo cuối danh sách khi có dữ liệu
 
     return Column(
       children: [

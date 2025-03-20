@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Ứng dụng cần quyền truy cập vào thư viện ảnh để chọn hình ảnh danh mục</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Ứng dụng cần quyền truy cập vào camera để chụp hình ảnh danh mục</string>
 	</dict>
 </plist>

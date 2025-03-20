@@ -6,6 +6,7 @@ class SearchField extends StatefulWidget {
   final Function(String) onSubmitted;
   final Function() onClear;
   final String hintText;
+  final String? initialValue;
 
   const SearchField({
     super.key,
@@ -13,6 +14,7 @@ class SearchField extends StatefulWidget {
     required this.onSubmitted,
     required this.onClear,
     this.hintText = 'Tìm kiếm...',
+    this.initialValue,
   });
 
   @override
@@ -26,11 +28,25 @@ class _SearchFieldState extends State<SearchField> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialValue != null) {
+      _controller.text = widget.initialValue!;
+      _hasText = widget.initialValue!.isNotEmpty;
+    }
+    
     _controller.addListener(() {
       setState(() {
         _hasText = _controller.text.isNotEmpty;
       });
     });
+  }
+
+  @override
+  void didUpdateWidget(SearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != oldWidget.initialValue) {
+      _controller.text = widget.initialValue ?? '';
+      _hasText = (widget.initialValue ?? '').isNotEmpty;
+    }
   }
 
   @override

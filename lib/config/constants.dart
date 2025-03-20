@@ -22,6 +22,10 @@ class ApiConstants {
   static const String info = '/users/info';
   static const String profile = '/users/profile';
   static const String updateProfile = '/users/profile';
+  static const String uploadImage = '/upload-images';
+
+  // Category endpoints
+  static const String categories = '/categories';
 
   // Product endpoints
   static const String products = '/products';
@@ -65,7 +69,7 @@ class AppStrings {
 
   // User roles
   static const roleAdmin = 'ADMIN';
-  static const roleManager = 'MANAGER'; 
+  static const roleManager = 'MANAGER';
   static const roleStaff = 'STAFF';
   static const roleUser = 'USER';
 
@@ -108,13 +112,10 @@ class AppTextStyles {
 class AppLists {
   static const userRoles = [
     AppStrings.roleAdmin,
-    AppStrings.roleUser, 
+    AppStrings.roleUser,
     AppStrings.roleManager,
     AppStrings.roleStaff
   ];
 
-  static const genders = [
-    AppStrings.genderMale,
-    AppStrings.genderFemale
-  ];
+  static const genders = [AppStrings.genderMale, AppStrings.genderFemale];
 }

@@ -57,23 +57,14 @@ class CustomDrawer extends StatelessWidget {
     // Nếu người dùng xác nhận đăng xuất
     if (confirm == true) {
       final viewModel = context.read<DrawerViewModel>();
-      final success = await viewModel.logout();
+      await viewModel.logout();
 
       if (context.mounted) {
-        if (success) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.login,
-            (route) => false,
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(viewModel.error ?? 'Đã có lỗi xảy ra'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (route) => false,
+        );
       }
     }
   }

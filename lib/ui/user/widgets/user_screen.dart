@@ -1,4 +1,5 @@
 import 'package:ezstore_flutter/domain/models/user/user.dart';
+import 'package:ezstore_flutter/routing/app_routes.dart';
 import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,8 +9,6 @@ import '../../core/shared/custom_app_bar.dart';
 import '../../../config/constants.dart';
 import '../../core/shared/search_field.dart';
 import 'user_card.dart';
-import 'add_user_screen.dart';
-import 'user_detail_screen.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({Key? key}) : super(key: key);
@@ -68,10 +67,7 @@ class _UserScreenState extends State<UserScreen> {
         additionalActions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddUserScreen()),
-            ),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.addUser),
           ),
         ],
       ),
@@ -129,11 +125,13 @@ class _UserScreenState extends State<UserScreen> {
                 onRefresh: () => viewModel.refresh(),
                 padding: const EdgeInsets.all(0),
                 separatorHeight: AppSizes.paddingSmall,
+                showEmptyWidget: false,
                 headerBuilder: (context) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SearchField(
                       hintText: "Tìm kiếm theo email, tên",
+                      initialValue: viewModel.searchKeyword,
                       onChanged: (value) {
                         // Không làm gì khi thay đổi, chỉ cập nhật UI
                       },
@@ -193,51 +191,15 @@ class _UserScreenState extends State<UserScreen> {
                       user: user,
                       onViewDetails: () {
                         // Mở UserDetailScreen ở chế độ xem khi nhấn vào UserCard
-                        Navigator.push(
+                        Navigator.pushNamed(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => UserDetailScreen(
-                              isEditMode: false,
-                              userId: user.id,
-                            ),
-                          ),
+                          AppRoutes.userDetail,
+                          arguments: {'id': user.id},
                         );
                       },
                     ),
                   );
                 },
-                emptyWidget: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.person_off,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        viewModel.searchKeyword != null
-                            ? "Không tìm thấy kết quả"
-                            : "Danh sách người dùng rỗng",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        viewModel.searchKeyword != null
-                            ? "Không tìm thấy người dùng nào phù hợp với '${viewModel.searchKeyword}'"
-                            : "Không tìm thấy người dùng nào",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 endOfListWidget: Text(
                   viewModel.searchKeyword != null
                       ? "Đã hiển thị tất cả ${viewModel.totalItems} kết quả cho '${viewModel.searchKeyword}'"

@@ -190,6 +190,18 @@ class ApiService {
         data: data,
         queryParameters: queryParameters,
       );
+
+      // Kiểm tra mã trạng thái 204 No Content
+      if (response.statusCode == 204) {
+        return ApiResponse(
+          statusCode: 200,
+          error: null,
+          message: 'Xóa thành công',
+          data: null, // Không có dữ liệu trả về
+        );
+      }
+
+      // Nếu không phải 204, xử lý như bình thường
       return ApiResponse.fromJson(response.data, fromJson);
     } catch (e) {
       final error = _handleError(e);
