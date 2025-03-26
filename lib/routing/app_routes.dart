@@ -1,5 +1,8 @@
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/category_detail_screen.dart';
+import 'package:ezstore_flutter/ui/product/widgets/add_product_screen.dart';
+import 'package:ezstore_flutter/ui/product/widgets/edit_product_screen.dart';
+import 'package:ezstore_flutter/ui/product/widgets/product_detail_screen.dart';
 import 'package:ezstore_flutter/ui/review/widgets/review_screen.dart';
 import 'package:ezstore_flutter/ui/user/widgets/add_user_screen.dart';
 import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
@@ -17,6 +20,9 @@ class AppRoutes {
   static const String login = '/login';
   static const String dashboard = '/dashboard';
   static const String products = '/products';
+  static const String productDetail = '/productDetail';
+  static const String editProduct = '/editProduct';
+  static const String addProduct = '/addProduct';
   static const String reviews = '/reviews';
   static const String orders = '/orders';
   static const String categories = '/categories';
@@ -47,6 +53,18 @@ class AppRoutes {
       // Product case
       case products:
         return _createRoute(const ProductScreen());
+      case productDetail:
+        final productId = args?['id'];
+        return _createRoute(ProductDetailScreen(
+          productId: productId,
+        ));
+      case editProduct:
+        final productId = args?['id'];
+        return _createRoute(EditProductScreen(
+          productId: productId,
+        ));
+      case addProduct:
+        return _createRoute(const AddProductScreen());
 
       // Review case
       case reviews:

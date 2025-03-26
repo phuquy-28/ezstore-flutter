@@ -9,6 +9,10 @@ class DetailTextField extends StatelessWidget {
   final Color? textColor;
   final Color? fillColor;
   final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final Function(String)? onChanged;
+  final VoidCallback? onEditingComplete;
+  final Function(PointerDownEvent)? onTapOutside;
 
   const DetailTextField({
     super.key,
@@ -20,6 +24,10 @@ class DetailTextField extends StatelessWidget {
     this.textColor,
     this.fillColor,
     this.validator,
+    this.keyboardType,
+    this.onChanged,
+    this.onEditingComplete,
+    this.onTapOutside,
   });
 
   @override
@@ -41,6 +49,10 @@ class DetailTextField extends StatelessWidget {
           enabled: enabled,
           obscureText: obscureText,
           validator: validator,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          onEditingComplete: onEditingComplete,
+          onTapOutside: onTapOutside,
           style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             hintText: hintText,
@@ -58,6 +70,14 @@ class DetailTextField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.black),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

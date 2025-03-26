@@ -1,34 +1,14 @@
+import 'dart:async';
 import 'package:ezstore_flutter/config/constants.dart';
+import 'package:ezstore_flutter/routing/app_routes.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
 import 'package:ezstore_flutter/ui/core/shared/search_field.dart';
+import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
+import 'package:ezstore_flutter/ui/product/view_models/product_screen_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
-class Product {
-  final String name;
-  final String imageUrl;
-  final String category;
-  final double originalPrice;
-  final double salePrice;
-  final bool isFeatured;
-
-  Product({
-    required this.name,
-    required this.imageUrl,
-    required this.category,
-    required this.originalPrice,
-    required this.salePrice,
-    required this.isFeatured,
-  });
-
-  double get discountPercentage {
-    if (originalPrice == 0) return 0;
-    return ((originalPrice - salePrice) / originalPrice * 100)
-        .round()
-        .toDouble();
-  }
-}
+import 'package:provider/provider.dart';
+import 'product_card.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
@@ -38,70 +18,25 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  final List<Product> products = [
-    Product(
-      name: 'Áo jumper',
-      imageUrl:
-          'https://res.cloudinary.com/db9vcatme/image/upload/v1732775286/ao-jumper-1_si9btg.jpg',
-      category: 'Áo Cardigan & Áo len',
-      originalPrice: 399000,
-      salePrice: 279300,
-      isFeatured: true,
-    ),
-    Product(
-      name: 'Áo măng tô maxi lông xù',
-      imageUrl:
-          'https://res.cloudinary.com/db9vcatme/image/upload/v1732775286/ao-jumper-1_si9btg.jpg',
-      category: 'Áo khoác & Áo khoác dài',
-      originalPrice: 1999000,
-      salePrice: 999500,
-      isFeatured: true,
-    ),
-    Product(
-      name: 'Áo măng tô maxi lông xù',
-      imageUrl:
-          'https://res.cloudinary.com/db9vcatme/image/upload/v1732775286/ao-jumper-1_si9btg.jpg',
-      category: 'Áo khoác & Áo khoác dài',
-      originalPrice: 1999000,
-      salePrice: 999500,
-      isFeatured: true,
-    ),
-    Product(
-      name: 'Áo măng tô maxi lông xù',
-      imageUrl:
-          'https://res.cloudinary.com/db9vcatme/image/upload/v1732775286/ao-jumper-1_si9btg.jpg',
-      category: 'Áo khoác & Áo khoác dài',
-      originalPrice: 1999000,
-      salePrice: 999500,
-      isFeatured: true,
-    ),
-    Product(
-      name: 'Áo măng tô maxi lông xù',
-      imageUrl:
-          'https://res.cloudinary.com/db9vcatme/image/upload/v1732775286/ao-jumper-1_si9btg.jpg',
-      category: 'Áo khoác & Áo khoác dài',
-      originalPrice: 1999000,
-      salePrice: 999500,
-      isFeatured: true,
-    ),
-    // Add more products as needed
-  ];
+  bool _isInitialized = false;
 
-  String searchQuery = '';
-
-  List<Product> get filteredProducts {
-    if (searchQuery.isEmpty) {
-      return products;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Chỉ gọi loadData một lần sau khi widget được khởi tạo
+    if (!_isInitialized) {
+      _isInitialized = true;
+      // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
+      Future.microtask(() {
+        Provider.of<ProductScreenViewModel>(context, listen: false)
+            .loadFirstPage();
+      });
     }
-    return products
-        .where((product) =>
-            product.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            product.category.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use Consumer for more targeted rebuilds
     return Scaffold(
       appBar: CustomAppBar(
         title: AppStrings.products,
@@ -109,518 +44,174 @@ class _ProductScreenState extends State<ProductScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              _showAddProductDialog(context);
+              Navigator.pushNamed(context, AppRoutes.addProduct);
             },
           ),
         ],
       ),
-      drawer: CustomDrawer(),
-      body: Column(
-        children: [
-          SearchField(
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-            },
-            onSubmitted: (value) {
-              // Tạm bỏ qua xử lý
-            },
-            onClear: () {
-              // Tạm bỏ qua xử lý
-            },
-          ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: filteredProducts.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final product = filteredProducts[index];
-                return ProductCard(product: product);
+      drawer: const CustomDrawer(),
+      body: Consumer<ProductScreenViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading && viewModel.items == null) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (viewModel.error != null) {
+            return _buildErrorView(viewModel.error!);
+          } else {
+            return _buildProductList(viewModel);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductList(ProductScreenViewModel viewModel) {
+    return PaginatedListView(
+      items: viewModel.getFilteredProducts(),
+      isLoading: viewModel.isLoading,
+      hasMoreData: viewModel.hasMorePages,
+      onLoadMore: () => viewModel.loadNextPage(),
+      onRefresh: () => viewModel.refresh(),
+      padding: EdgeInsets.zero,
+      separatorHeight: AppSizes.paddingSmall,
+      showEmptyWidget: false,
+      headerBuilder: (context) => _buildHeader(viewModel),
+      itemBuilder: (context, product, index) {
+        return Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppSizes.paddingNormal),
+          child: RepaintBoundary(
+            child: ProductCard(
+              product: product,
+              onDelete: (productId) async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final success = await viewModel.deleteProduct(productId);
+                if (mounted) {
+                  if (success) {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Xóa sản phẩm thành công'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Không thể xóa sản phẩm. Vui lòng thử lại sau.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddProductDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Thêm sản phẩm mới'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton(
-                onPressed: () {
-                  // Add image picker logic
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image),
-                    SizedBox(width: 8),
-                    Text('Chọn hình ảnh'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Tên sản phẩm',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Danh mục',
-                  border: OutlineInputBorder(),
-                ),
-                items: ['Áo Cardigan & Áo len', 'Áo khoác & Áo khoác dài']
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (value) {},
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Giá gốc',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Giá sale',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Nổi bật'),
-                value: false,
-                onChanged: (bool value) {},
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Add product logic
-            },
-            child: const Text('Thêm'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ProductCard extends StatelessWidget {
-  final Product product;
-
-  const ProductCard({super.key, required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
-    );
-
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: () {
-          _showProductDetails(context);
-        },
-        child: Row(
-          children: [
-            Container(
-              width: 140,
-              height: 140,
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: Image.network(
-                      product.imageUrl,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  if (product.discountPercentage > 0)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '-${product.discountPercentage.toInt()}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                product.category,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () {
-                            _showActionSheet(context);
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          currencyFormat.format(product.salePrice),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (product.originalPrice != product.salePrice)
-                          Text(
-                            currencyFormat.format(product.originalPrice),
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 7, 22, 45),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Nổi bật',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        );
+      },
+      endOfListWidget: Text(
+        viewModel.searchKeyword != null
+            ? "Đã hiển thị tất cả ${viewModel.totalProducts} kết quả cho '${viewModel.searchKeyword}'"
+            : "Đã hiển thị tất cả ${viewModel.totalProducts} sản phẩm",
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontStyle: FontStyle.italic,
         ),
       ),
     );
   }
 
-  void _showActionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Sửa'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showEditProductDialog(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('Xem chi tiết'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showProductDetails(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Xóa', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteConfirmation(context);
-                },
-              ),
-            ],
+  Widget _buildHeader(ProductScreenViewModel viewModel) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SearchField(
+          hintText: "Tìm kiếm theo tên sản phẩm",
+          initialValue: viewModel.searchKeyword,
+          onChanged: (value) {
+            // Không làm gì khi thay đổi, chỉ cập nhật UI
+          },
+          onSubmitted: (value) {
+            // Gọi tìm kiếm khi người dùng nhấn Enter
+            viewModel.searchProducts(value);
+          },
+          onClear: () {
+            // Xóa tìm kiếm và tải lại dữ liệu ban đầu
+            viewModel.clearSearch();
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(
+            left: AppSizes.paddingNormal,
+            right: AppSizes.paddingNormal,
+            bottom: AppSizes.paddingSmall,
           ),
-        );
-      },
-    );
-  }
-
-  void _showProductDetails(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
-    );
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Chi tiết sản phẩm',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.network(
-                  product.imageUrl,
-                  fit: BoxFit.cover,
+              Text(
+                viewModel.searchKeyword != null
+                    ? "Kết quả tìm kiếm: ${viewModel.totalProducts} sản phẩm"
+                    : "Tổng số: ${viewModel.totalProducts} sản phẩm",
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildDetailRow('Tên sản phẩm:', product.name),
-              _buildDetailRow('Danh mục:', product.category),
-              _buildDetailRow(
-                'Giá gốc:',
-                currencyFormat.format(product.originalPrice),
-              ),
-              _buildDetailRow(
-                'Giá sale:',
-                currencyFormat.format(product.salePrice),
-              ),
-              _buildDetailRow(
-                'Giảm giá:',
-                '${product.discountPercentage.toInt()}%',
-              ),
-              _buildDetailRow('Nổi bật:', product.isFeatured ? 'Có' : 'Không'),
+              if (viewModel.searchKeyword != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  "cho '${viewModel.searchKeyword}'",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ],
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildErrorView(String errorMessage) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
           Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            "Đã xảy ra lỗi",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(value),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              errorMessage,
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditProductDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sửa sản phẩm'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton(
-                onPressed: () {
-                  // Add image picker logic
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image),
-                    SizedBox(width: 8),
-                    Text('Thay đổi hình ảnh'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Tên sản phẩm',
-                  border: OutlineInputBorder(),
-                ),
-                controller: TextEditingController(text: product.name),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Danh mục',
-                  border: OutlineInputBorder(),
-                ),
-                value: product.category,
-                items: ['Áo Cardigan & Áo len', 'Áo khoác & Áo khoác dài']
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (value) {},
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Giá gốc',
-                  border: OutlineInputBorder(),
-                ),
-                controller: TextEditingController(
-                    text: product.originalPrice.toString()),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Giá sale',
-                  border: OutlineInputBorder(),
-                ),
-                controller:
-                    TextEditingController(text: product.salePrice.toString()),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Nổi bật'),
-                value: product.isFeatured,
-                onChanged: (bool value) {},
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              // Update product logic
+              Provider.of<ProductScreenViewModel>(context, listen: false)
+                  .refresh();
             },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa sản phẩm ${product.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Không'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Delete product logic
-            },
-            child: Text(
-              'Có',
-              style: TextStyle(color: Colors.red[700]),
-            ),
+            child: const Text("Thử lại"),
           ),
         ],
       ),

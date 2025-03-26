@@ -1,5 +1,5 @@
+import 'package:ezstore_flutter/config/constants.dart';
 import 'package:flutter/material.dart';
-import '../../../config/constants.dart';
 
 class SearchField extends StatefulWidget {
   final Function(String) onChanged;
@@ -32,7 +32,7 @@ class _SearchFieldState extends State<SearchField> {
       _controller.text = widget.initialValue!;
       _hasText = widget.initialValue!.isNotEmpty;
     }
-    
+
     _controller.addListener(() {
       setState(() {
         _hasText = _controller.text.isNotEmpty;

@@ -6,6 +6,7 @@ class DetailDropdown extends StatelessWidget {
   final ValueChanged<String?>? onChanged;
   final bool enabled;
   final Map<String, dynamic>? valueMap;
+  final Widget Function(BuildContext, String)? customItemBuilder;
 
   const DetailDropdown({
     super.key,
@@ -14,6 +15,7 @@ class DetailDropdown extends StatelessWidget {
     this.onChanged,
     this.enabled = true,
     this.valueMap,
+    this.customItemBuilder,
   });
 
   @override
@@ -56,7 +58,9 @@ class DetailDropdown extends StatelessWidget {
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item, style: const TextStyle(color: Colors.black)),
+              child: customItemBuilder != null
+                  ? customItemBuilder!(context, item)
+                  : Text(item, style: const TextStyle(color: Colors.black)),
             );
           }).toList(),
           onChanged: enabled

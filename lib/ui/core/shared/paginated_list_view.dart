@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 typedef ItemBuilder<T> = Widget Function(
@@ -48,6 +49,8 @@ class PaginatedListView<T> extends StatefulWidget {
 
 class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
   final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -59,15 +62,31 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - widget.loadMoreThreshold) {
-      if (!widget.isLoading && widget.hasMoreData) {
-        widget.onLoadMore();
-      }
+    if (!_isLoadingMore &&
+        !widget.isLoading &&
+        widget.hasMoreData &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent -
+                widget.loadMoreThreshold) {
+      // Debounce the load more call to prevent multiple calls
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _isLoadingMore = true;
+          widget.onLoadMore().then((_) {
+            if (mounted) {
+              setState(() {
+                _isLoadingMore = false;
+              });
+            }
+          });
+        }
+      });
     }
   }
 
@@ -97,7 +116,9 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
     // Tính toán số lượng item thực tế trong ListView
     int itemCount = widget.items.length +
         (widget.headerBuilder != null ? 1 : 0) +
-        (!widget.hasMoreData && widget.items.isNotEmpty ? 1 : 0); // Chỉ hiển thị thông báo cuối danh sách khi có dữ liệu
+        (!widget.hasMoreData && widget.items.isNotEmpty
+            ? 1
+            : 0); // Chỉ hiển thị thông báo cuối danh sách khi có dữ liệu
 
     return Column(
       children: [
@@ -105,9 +126,15 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
           child: RefreshIndicator(
             onRefresh: widget.onRefresh,
             child: ListView.builder(
+              key:
+                  PageStorageKey<String>('paginated_list_view_${T.toString()}'),
               controller: _scrollController,
               padding: widget.padding,
               itemCount: itemCount,
+              addAutomaticKeepAlives: true,
+              addRepaintBoundaries: true,
+              cacheExtent: 500,
+              itemExtent: null,
               itemBuilder: (context, index) {
                 // Hiển thị header nếu có và nếu đang ở vị trí đầu tiên
                 if (widget.headerBuilder != null && index == 0) {
@@ -139,8 +166,12 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
 
                 if (adjustedIndex >= 0 && adjustedIndex < widget.items.length) {
                   final item = widget.items[adjustedIndex];
-                  final itemWidget =
-                      widget.itemBuilder(context, item, adjustedIndex);
+                  // Use a key based on item identity to help Flutter efficiently update the list
+                  final itemWidget = KeyedSubtree(
+                    key: ValueKey<String>(
+                        'item_${adjustedIndex}_${item.hashCode}'),
+                    child: widget.itemBuilder(context, item, adjustedIndex),
+                  );
 
                   // Thêm separator nếu cần và không phải item cuối cùng
                   if (widget.separatorBuilder != null &&
