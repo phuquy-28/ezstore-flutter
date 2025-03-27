@@ -1,16 +1,20 @@
+import 'package:ezstore_flutter/config/constants.dart';
+import 'package:ezstore_flutter/domain/models/user/user_info_response.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
+import 'package:ezstore_flutter/routing/app_routes.dart';
+import 'package:ezstore_flutter/ui/drawer/viewmodel/drawer_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/constants.dart';
-import '../../../routing/app_routes.dart';
-import '../../../ui/drawer/viewmodel/drawer_viewmodel.dart';
-import '../../../domain/models/user/user_info_response.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final drawerViewModel =
+        Provider.of<DrawerViewModel>(context, listen: false);
+    final currentRoute = drawerViewModel.getCurrentRoute(context);
+
     return Consumer<UserInfoProvider>(
       builder: (context, userInfoProvider, child) {
         return Drawer(
@@ -20,53 +24,16 @@ class CustomDrawer extends StatelessWidget {
               children: [
                 _buildDrawerHeader(userInfoProvider.userInfo),
                 Expanded(
-                  child: _buildDrawerItems(context),
+                  child:
+                      _buildDrawerItems(context, currentRoute, drawerViewModel),
                 ),
-                _buildLogoutSection(context),
+                _buildLogoutSection(context, drawerViewModel),
               ],
             ),
           ),
         );
       },
     );
-  }
-
-  Future<void> _handleLogout(BuildContext context) async {
-    // Hiển thị hộp thoại xác nhận
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Đăng xuất'),
-          content: const Text('Bạn có chắc chắn muốn đăng xuất ?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child:
-                  const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-
-    // Nếu người dùng xác nhận đăng xuất
-    if (confirm == true) {
-      final viewModel = context.read<DrawerViewModel>();
-      await viewModel.logout();
-
-      if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-          (route) => false,
-        );
-      }
-    }
   }
 
   Widget _buildDrawerHeader(UserInfoResponse? userInfo) {
@@ -96,7 +63,8 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItems(BuildContext context) {
+  Widget _buildDrawerItems(
+      BuildContext context, String currentRoute, DrawerViewModel viewModel) {
     return ListView(
       shrinkWrap: true,
       children: [
@@ -105,42 +73,56 @@ class CustomDrawer extends StatelessWidget {
           Icons.dashboard_outlined,
           AppStrings.dashboard,
           AppRoutes.dashboard,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.people_outlined,
           AppStrings.users,
           AppRoutes.users,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.shopping_bag_outlined,
           AppStrings.products,
           AppRoutes.products,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.category_outlined,
           AppStrings.categories,
           AppRoutes.categories,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.receipt_outlined,
           AppStrings.orders,
           AppRoutes.orders,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.discount_outlined,
           AppStrings.promotions,
           AppRoutes.promotions,
+          currentRoute,
+          viewModel,
         ),
         _buildDrawerItem(
           context,
           Icons.star_outline,
           AppStrings.reviews,
           AppRoutes.reviews,
+          currentRoute,
+          viewModel,
         ),
       ],
     );
@@ -151,8 +133,9 @@ class CustomDrawer extends StatelessWidget {
     IconData icon,
     String title,
     String route,
+    String currentRoute,
+    DrawerViewModel viewModel,
   ) {
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
     final isSelected = currentRoute == route;
 
     return Material(
@@ -182,18 +165,7 @@ class CustomDrawer extends StatelessWidget {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          onTap: () {
-            if (currentRoute == route) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(
-                context,
-                route,
-                arguments: {'previousRoute': currentRoute},
-              );
-            }
-          },
+          onTap: () => viewModel.navigateToRoute(context, route),
           selected: isSelected,
           selectedTileColor: AppColors.primary.withOpacity(0.1),
         ),
@@ -201,7 +173,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutSection(BuildContext context) {
+  Widget _buildLogoutSection(BuildContext context, DrawerViewModel viewModel) {
     return Column(
       children: [
         Container(
@@ -215,7 +187,7 @@ class CustomDrawer extends StatelessWidget {
             'Đăng xuất',
             style: TextStyle(color: Colors.red),
           ),
-          onTap: () => _handleLogout(context),
+          onTap: () => viewModel.handleLogout(context),
         ),
         const SizedBox(height: 16),
       ],

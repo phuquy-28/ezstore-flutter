@@ -1,20 +1,29 @@
+import 'package:ezstore_flutter/data/repositories/auth_repository.dart';
+import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
+import 'package:ezstore_flutter/data/repositories/user_repository.dart';
+import 'package:ezstore_flutter/ui/auth/login/view_model/login_viewmodel.dart';
+import 'package:ezstore_flutter/ui/auth/login/widgets/login_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/category_detail_screen.dart';
+import 'package:ezstore_flutter/ui/category/widgets/category_screen.dart';
+import 'package:ezstore_flutter/ui/core/shared/error_screen.dart';
+import 'package:ezstore_flutter/ui/dashboard/view_model/dashboard_viewmodel.dart';
+import 'package:ezstore_flutter/ui/dashboard/widgets/dashboard_screen.dart';
+import 'package:ezstore_flutter/ui/order/widgets/order_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/add_product_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/edit_product_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/product_detail_screen.dart';
+import 'package:ezstore_flutter/ui/product/widgets/product_screen.dart';
+import 'package:ezstore_flutter/ui/promotion/widgets/promotion_screen.dart';
 import 'package:ezstore_flutter/ui/review/widgets/review_screen.dart';
+import 'package:ezstore_flutter/ui/user/view_models/add_user_view_model.dart';
+import 'package:ezstore_flutter/ui/user/view_models/user_detail_view_model.dart';
+import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart';
 import 'package:ezstore_flutter/ui/user/widgets/add_user_screen.dart';
 import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
+import 'package:ezstore_flutter/ui/user/widgets/user_screen.dart';
 import 'package:flutter/material.dart';
-import '../ui/auth/login/widgets/login_screen.dart';
-import '../ui/dashboard/widgets/dashboard_screen.dart';
-import '../ui/product/widgets/product_screen.dart';
-import '../ui/user/widgets/user_screen.dart';
-import '../ui/category/widgets/category_screen.dart';
-import '../ui/order/widgets/order_screen.dart';
-import '../ui/promotion/widgets/promotion_screen.dart';
-import '../ui/core/shared/error_screen.dart';
+import 'package:provider/provider.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -46,9 +55,25 @@ class AppRoutes {
 
     switch (settings.name) {
       case login:
-        return _createRoute(const LoginScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final authRepository =
+                Provider.of<AuthRepository>(context, listen: false);
+            final loginViewModel = LoginViewModel(authRepository);
+            return LoginScreen(viewModel: loginViewModel);
+          },
+          settings: settings,
+        );
       case dashboard:
-        return _createRoute(const DashboardScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final dashboardRepository =
+                Provider.of<DashboardRepository>(context, listen: false);
+            final dashboardViewModel = DashboardViewModel(dashboardRepository);
+            return DashboardScreen(viewModel: dashboardViewModel);
+          },
+          settings: settings,
+        );
 
       // Product case
       case products:
@@ -88,13 +113,40 @@ class AppRoutes {
 
       // User case
       case users:
-        return _createRoute(const UserScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final userRepository =
+                Provider.of<UserRepository>(context, listen: false);
+            final userScreenViewModel = UserScreenViewModel(userRepository);
+            return UserScreen(viewModel: userScreenViewModel);
+          },
+          settings: settings,
+        );
       case userDetail:
         final userId = args?['id'];
-        return _createRoute(
-            UserDetailScreen(isEditMode: false, userId: userId));
+        return MaterialPageRoute(
+          builder: (context) {
+            final userRepository =
+                Provider.of<UserRepository>(context, listen: false);
+            final userDetailViewModel = UserDetailViewModel(userRepository);
+            return UserDetailScreen(
+              viewModel: userDetailViewModel,
+              isEditMode: false,
+              userId: userId,
+            );
+          },
+          settings: settings,
+        );
       case addUser:
-        return _createRoute(const AddUserScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final userRepository =
+                Provider.of<UserRepository>(context, listen: false);
+            final addUserViewModel = AddUserViewModel(userRepository);
+            return AddUserScreen(viewModel: addUserViewModel);
+          },
+          settings: settings,
+        );
 
       // Promotion case
       case promotions:

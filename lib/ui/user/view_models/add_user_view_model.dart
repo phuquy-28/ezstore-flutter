@@ -1,9 +1,10 @@
+import 'package:ezstore_flutter/data/models/user/req_user.dart';
+import 'package:ezstore_flutter/data/repositories/user_repository.dart';
+import 'package:ezstore_flutter/domain/models/user/user.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../../../data/models/user/req_user.dart';
-import '../../../domain/models/user/user.dart';
-import '../../../data/repositories/user_repository.dart';
 
 class AddUserViewModel extends ChangeNotifier {
   final UserRepository _userRepository;
@@ -12,6 +13,21 @@ class AddUserViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isSuccess = false;
   User? _createdUser;
+  bool _isPasswordVisible = false;
+
+  // Maps for handling dropdown values
+  final Map<String, dynamic> genderMap = {
+    'Nam': 'MALE',
+    'Nữ': 'FEMALE',
+    'Khác': 'OTHER',
+  };
+
+  final Map<String, int> roleMap = {
+    'Admin': 1,
+    'User': 2,
+    'Staff': 3,
+    'Manager': 4,
+  };
 
   AddUserViewModel(this._userRepository);
 
@@ -19,6 +35,14 @@ class AddUserViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isSuccess => _isSuccess;
   User? get createdUser => _createdUser;
+  bool get isPasswordVisible => _isPasswordVisible;
+  Map<String, dynamic> get getGenderMap => genderMap;
+  Map<String, int> get getRoleMap => roleMap;
+
+  void togglePasswordVisibility() {
+    _isPasswordVisible = !_isPasswordVisible;
+    notifyListeners();
+  }
 
   void resetState() {
     _isLoading = false;
@@ -88,6 +112,40 @@ class AddUserViewModel extends ChangeNotifier {
     }
   }
 
+  // Generate random password
+  String generateRandomPassword() {
+    const String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const String lower = 'abcdefghijklmnopqrstuvwxyz';
+    const String digits = '0123456789';
+    const String special = '@#\$%!';
+
+    String password = '';
+    password +=
+        upper[(DateTime.now().millisecondsSinceEpoch % upper.length).toInt()];
+    password +=
+        lower[(DateTime.now().millisecondsSinceEpoch % lower.length).toInt()];
+    password +=
+        digits[(DateTime.now().millisecondsSinceEpoch % digits.length).toInt()];
+    password += special[
+        (DateTime.now().millisecondsSinceEpoch % special.length).toInt()];
+
+    // Thêm các ký tự ngẫu nhiên khác để đạt độ dài tối thiểu (ví dụ: 8 ký tự)
+    const String allChars = upper + lower + digits + special;
+    for (int i = 4; i < 8; i++) {
+      password += allChars[
+          (DateTime.now().millisecondsSinceEpoch % allChars.length).toInt()];
+    }
+
+    // Trộn mật khẩu và trả về dưới dạng chuỗi
+    return (password.split('')..shuffle()).join();
+  }
+
+  // Copy user credentials to clipboard
+  void copyCredentialsToClipboard(String email, String password) {
+    final clipboardData = 'Email: $email\nMật khẩu: $password';
+    Clipboard.setData(ClipboardData(text: clipboardData));
+  }
+
   // Hàm helper để định dạng ngày sinh - giống như trong UserDetailViewModel
   String? _formatBirthDate(dynamic birthDate) {
     if (birthDate == null) return null;
@@ -112,36 +170,54 @@ class AddUserViewModel extends ChangeNotifier {
     return null;
   }
 
-  // Phương thức kiểm tra tính hợp lệ của email
-  bool isValidEmail(String email) {
+  // Validator functions
+  String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập email';
+    }
     final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegExp.hasMatch(email);
+    if (!emailRegExp.hasMatch(value)) {
+      return 'Email không hợp lệ';
+    }
+    return null;
   }
 
-  // Phương thức kiểm tra tính hợp lệ của mật khẩu
-  bool isValidPassword(String password) {
-    // Kiểm tra độ dài tối thiểu
-    if (password.length < 8) return false;
-
-    // Kiểm tra có ít nhất 1 chữ hoa
-    if (!password.contains(RegExp(r'[A-Z]'))) return false;
-
-    // Kiểm tra có ít nhất 1 chữ thường
-    if (!password.contains(RegExp(r'[a-z]'))) return false;
-
-    // Kiểm tra có ít nhất 1 số
-    if (!password.contains(RegExp(r'[0-9]'))) return false;
-
-    // Kiểm tra có ít nhất 1 ký tự đặc biệt
-    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) return false;
-
-    return true;
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu';
+    }
+    if (value.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự';
+    }
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Mật khẩu phải có ít nhất 1 chữ hoa';
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Mật khẩu phải có ít nhất 1 chữ thường';
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Mật khẩu phải có ít nhất 1 số';
+    }
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt';
+    }
+    return null;
   }
 
-  // Phương thức kiểm tra tính hợp lệ của số điện thoại
-  bool isValidPhoneNumber(String phoneNumber) {
-    if (phoneNumber.isEmpty) return true; // Cho phép số điện thoại trống
-    final phoneRegExp = RegExp(r'^[0-9]{10,11}$');
-    return phoneRegExp.hasMatch(phoneNumber);
+  String? validateRequired(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập $fieldName';
+    }
+    return null;
+  }
+
+  String? validatePhone(String? value) {
+    if (value != null && value.isNotEmpty) {
+      final phoneRegExp = RegExp(r'^[0-9]{10,11}$');
+      if (!phoneRegExp.hasMatch(value)) {
+        return 'Số điện thoại không hợp lệ';
+      }
+    }
+    return null;
   }
 }

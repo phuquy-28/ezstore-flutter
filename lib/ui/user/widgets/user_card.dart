@@ -1,17 +1,21 @@
+import 'package:ezstore_flutter/config/constants.dart';
 import 'package:ezstore_flutter/domain/models/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../config/constants.dart';
 import 'user_action_sheet.dart';
 
 class UserCard extends StatelessWidget {
   final User user;
   final VoidCallback onViewDetails;
+  final Function(int) onDeleteUser;
+  final VoidCallback onEditSuccess;
 
   const UserCard({
     Key? key,
     required this.user,
     required this.onViewDetails,
+    required this.onDeleteUser,
+    required this.onEditSuccess,
   }) : super(key: key);
 
   Color getRoleColor() {
@@ -31,7 +35,11 @@ class UserCard extends StatelessWidget {
   void _showActionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) => UserActionSheet(user: user),
+      builder: (BuildContext context) => UserActionSheet(
+        user: user,
+        onDeleteUser: onDeleteUser,
+        onEditSuccess: onEditSuccess,
+      ),
     );
   }
 

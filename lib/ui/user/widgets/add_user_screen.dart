@@ -1,17 +1,19 @@
+import 'package:ezstore_flutter/ui/core/shared/custom_button.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_app_bar.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_date_input.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_dropdown.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_text_field.dart';
 import 'package:ezstore_flutter/ui/user/view_models/add_user_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../ui/core/shared/custom_button.dart';
-import '../../../ui/core/shared/detail_app_bar.dart';
-import '../../../ui/core/shared/detail_text_field.dart';
-import '../../../ui/core/shared/detail_date_input.dart';
-import '../../../ui/core/shared/detail_dropdown.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 class AddUserScreen extends StatefulWidget {
-  const AddUserScreen({Key? key}) : super(key: key);
+  final AddUserViewModel viewModel;
+
+  const AddUserScreen({
+    Key? key,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   _AddUserScreenState createState() => _AddUserScreenState();
@@ -29,21 +31,32 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   String selectedGender = 'Nam';
   String selectedRole = 'Admin';
-  bool _isPasswordVisible = false;
-  bool _isLoading = false;
 
-  final Map<String, dynamic> genderMap = {
-    'Nam': 'MALE',
-    'Nữ': 'FEMALE',
-    'Khác': 'OTHER',
-  };
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_viewModelListener);
+  }
 
-  final Map<String, int> roleMap = {
-    'Admin': 1,
-    'User': 2,
-    'Staff': 3,
-    'Manager': 4,
-  };
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _birthDateController.dispose();
+    _phoneController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        // Update UI if needed when viewModel changes
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +68,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         isEditMode: false,
         showEditButton: false,
       ),
-      body: _isLoading
+      body: widget.viewModel.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
@@ -69,17 +82,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     hintText: 'Nhập email',
                     textColor: Colors.black,
                     fillColor: Colors.white,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập email';
-                      }
-                      final emailRegExp =
-                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                      if (!emailRegExp.hasMatch(value)) {
-                        return 'Email không hợp lệ';
-                      }
-                      return null;
-                    },
+                    validator: widget.viewModel.validateEmail,
                   ),
                   const SizedBox(height: 24),
                   _buildFormField(
@@ -92,43 +95,20 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             label: 'Mật khẩu',
                             enabled: true,
                             hintText: 'Nhập mật khẩu',
-                            obscureText: !_isPasswordVisible,
+                            obscureText: !widget.viewModel.isPasswordVisible,
                             textColor: Colors.black,
                             fillColor: Colors.white,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập mật khẩu';
-                              }
-                              if (value.length < 8) {
-                                return 'Mật khẩu phải có ít nhất 8 ký tự';
-                              }
-                              if (!value.contains(RegExp(r'[A-Z]'))) {
-                                return 'Mật khẩu phải có ít nhất 1 chữ hoa';
-                              }
-                              if (!value.contains(RegExp(r'[a-z]'))) {
-                                return 'Mật khẩu phải có ít nhất 1 chữ thường';
-                              }
-                              if (!value.contains(RegExp(r'[0-9]'))) {
-                                return 'Mật khẩu phải có ít nhất 1 số';
-                              }
-                              if (!value.contains(
-                                  RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-                                return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt';
-                              }
-                              return null;
-                            },
+                            validator: widget.viewModel.validatePassword,
                           ),
                         ),
                         IconButton(
                           icon: Icon(
-                            _isPasswordVisible
+                            widget.viewModel.isPasswordVisible
                                 ? Icons.visibility
                                 : Icons.visibility_off,
                           ),
                           onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
+                            widget.viewModel.togglePasswordVisibility();
                           },
                         ),
                         const SizedBox(width: 12),
@@ -163,12 +143,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           hintText: 'Nhập họ',
                           textColor: Colors.black,
                           fillColor: Colors.white,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập họ';
-                            }
-                            return null;
-                          },
+                          validator: (value) =>
+                              widget.viewModel.validateRequired(value, 'họ'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -180,12 +156,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           hintText: 'Nhập tên',
                           textColor: Colors.black,
                           fillColor: Colors.white,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập tên';
-                            }
-                            return null;
-                          },
+                          validator: (value) =>
+                              widget.viewModel.validateRequired(value, 'tên'),
                         ),
                       ),
                     ],
@@ -207,15 +179,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     hintText: 'Nhập số điện thoại',
                     textColor: Colors.black,
                     fillColor: Colors.white,
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        final phoneRegExp = RegExp(r'^[0-9]{10,11}$');
-                        if (!phoneRegExp.hasMatch(value)) {
-                          return 'Số điện thoại không hợp lệ';
-                        }
-                      }
-                      return null;
-                    },
+                    validator: widget.viewModel.validatePhone,
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -227,7 +191,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           child: DetailDropdown(
                             value: selectedGender,
                             items: const ['Nam', 'Nữ', 'Khác'],
-                            valueMap: genderMap,
+                            valueMap: widget.viewModel.getGenderMap,
                             onChanged: (String? newValue) {
                               if (newValue != null) {
                                 setState(() {
@@ -315,15 +279,15 @@ class _AddUserScreenState extends State<AddUserScreen> {
   }
 
   void _generateRandomPassword() {
-    String randomPassword = _createRandomPassword();
+    String randomPassword = widget.viewModel.generateRandomPassword();
     setState(() {
       _passwordController.text = randomPassword;
     });
 
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final clipboardData = 'Email: $email\nMật khẩu: $password';
-    Clipboard.setData(ClipboardData(text: clipboardData));
+    // Copy to clipboard
+    widget.viewModel.copyCredentialsToClipboard(
+        _emailController.text, _passwordController.text);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Email và mật khẩu đã được sao chép vào clipboard!'),
@@ -332,44 +296,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
     );
   }
 
-  String _createRandomPassword() {
-    const String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const String lower = 'abcdefghijklmnopqrstuvwxyz';
-    const String digits = '0123456789';
-    const String special = '@#\$%&*!';
-
-    String password = '';
-    password +=
-        upper[(DateTime.now().millisecondsSinceEpoch % upper.length).toInt()];
-    password +=
-        lower[(DateTime.now().millisecondsSinceEpoch % lower.length).toInt()];
-    password +=
-        digits[(DateTime.now().millisecondsSinceEpoch % digits.length).toInt()];
-    password += special[
-        (DateTime.now().millisecondsSinceEpoch % special.length).toInt()];
-
-    const String allChars = upper + lower + digits + special;
-    for (int i = 4; i < 8; i++) {
-      password += allChars[
-          (DateTime.now().millisecondsSinceEpoch % allChars.length).toInt()];
-    }
-
-    return (password.split('')..shuffle()).join();
-  }
-
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      // Get gender value
+      final String genderValue =
+          widget.viewModel.getGenderMap[selectedGender] ?? 'MALE';
 
-      final viewModel = Provider.of<AddUserViewModel>(context, listen: false);
+      // Get roleId
+      final int roleId = widget.viewModel.getRoleMap[selectedRole] ?? 2;
 
-      final String genderValue = genderMap[selectedGender] ?? 'MALE';
-
-      final int roleId = roleMap[selectedRole] ?? 2;
-
-      viewModel
+      widget.viewModel
           .addUser(
         email: _emailController.text,
         password: _passwordController.text,
@@ -384,10 +320,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
         roleId: roleId,
       )
           .then((success) {
-        setState(() {
-          _isLoading = false;
-        });
-
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -400,16 +332,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Lỗi: ${viewModel.errorMessage ?? "Không thể thêm người dùng"}'),
+                  'Lỗi: ${widget.viewModel.errorMessage ?? "Không thể thêm người dùng"}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }).catchError((error) {
-        setState(() {
-          _isLoading = false;
-        });
-
+        // Show error message in snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi: ${error.toString()}'),

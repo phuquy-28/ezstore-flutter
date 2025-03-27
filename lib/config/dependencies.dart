@@ -1,33 +1,27 @@
+import 'package:ezstore_flutter/data/repositories/auth_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
 import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
+import 'package:ezstore_flutter/data/repositories/user_repository.dart';
+import 'package:ezstore_flutter/data/services/api_service.dart';
+import 'package:ezstore_flutter/data/services/auth_service.dart';
 import 'package:ezstore_flutter/data/services/category_service.dart';
 import 'package:ezstore_flutter/data/services/dashboard_service.dart';
 import 'package:ezstore_flutter/data/services/product_service.dart';
+import 'package:ezstore_flutter/data/services/shared_preference_service.dart';
 import 'package:ezstore_flutter/data/services/upload_service.dart';
 import 'package:ezstore_flutter/data/services/user_service.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
 import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.dart';
 import 'package:ezstore_flutter/ui/category/view_models/category_detail_view_model.dart';
 import 'package:ezstore_flutter/ui/category/view_models/category_screen_view_model.dart';
+import 'package:ezstore_flutter/ui/drawer/viewmodel/drawer_viewmodel.dart';
 import 'package:ezstore_flutter/ui/product/view_models/add_product_view_model.dart';
 import 'package:ezstore_flutter/ui/product/view_models/edit_product_view_model.dart';
 import 'package:ezstore_flutter/ui/product/view_models/product_detail_view_model.dart';
 import 'package:ezstore_flutter/ui/product/view_models/product_screen_view_model.dart';
-import 'package:ezstore_flutter/ui/user/view_models/add_user_view_model.dart';
-import 'package:ezstore_flutter/ui/user/view_models/user_detail_view_model.dart';
-import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
-
-import '../data/services/shared_preference_service.dart';
-import '../data/services/auth_service.dart';
-import '../data/services/api_service.dart';
-import '../data/repositories/auth_repository.dart';
-import '../ui/auth/login/view_model/login_viewmodel.dart';
-import '../data/repositories/user_repository.dart';
-import '../ui/drawer/viewmodel/drawer_viewmodel.dart';
-import '../ui/dashboard/view_model/dashboard_viewmodel.dart';
 
 List<SingleChildWidget> get providers {
   return [
@@ -77,31 +71,11 @@ List<SingleChildWidget> get providers {
 
     // ViewModels
     ChangeNotifierProvider(
-        create: (context) => LoginViewModel(
-              context.read<AuthRepository>(),
-            )),
-    ChangeNotifierProvider(
         create: (context) => DrawerViewModel(
               context.read<AuthRepository>(),
             )),
     ChangeNotifierProvider(
         create: (context) => UserInfoProvider(
-              context.read<UserRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => DashboardViewModel(
-              context.read<DashboardRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => UserScreenViewModel(
-              context.read<UserRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => UserDetailViewModel(
-              context.read<UserRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => AddUserViewModel(
               context.read<UserRepository>(),
             )),
     ChangeNotifierProvider(

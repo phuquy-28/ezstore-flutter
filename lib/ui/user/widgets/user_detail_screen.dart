@@ -1,22 +1,24 @@
+import 'package:ezstore_flutter/domain/models/user/user.dart';
+import 'package:ezstore_flutter/ui/core/shared/custom_button.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_app_bar.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_date_input.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_dropdown.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_text_field.dart';
+import 'package:ezstore_flutter/ui/user/view_models/user_detail_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import '../../../ui/core/shared/custom_button.dart';
-import '../../../ui/core/shared/detail_app_bar.dart';
-import '../../../ui/core/shared/detail_text_field.dart';
-import '../../../ui/core/shared/detail_date_input.dart';
-import '../../../ui/core/shared/detail_dropdown.dart';
-import '../view_models/user_detail_view_model.dart';
-import '../../../domain/models/user/user.dart';
-import 'package:flutter/rendering.dart';
 
 class UserDetailScreen extends StatefulWidget {
   final bool isEditMode;
   final int? userId;
+  final UserDetailViewModel viewModel;
 
-  const UserDetailScreen({Key? key, this.isEditMode = false, this.userId})
-      : super(key: key);
+  const UserDetailScreen({
+    Key? key,
+    this.isEditMode = false,
+    this.userId,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   _UserDetailScreenState createState() => _UserDetailScreenState();
@@ -35,53 +37,55 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
 
   String selectedGender = 'Nam';
   String selectedRole = 'User';
-  bool _isLoading = true;
-  String? _errorMessage;
-  bool _isPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
     isEditMode = widget.isEditMode;
-
-    // Không khởi tạo giá trị mặc định cho ngày sinh
-    // _birthDateController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
-
-    // Đặt _isLoading = true trước khi gọi API
-    setState(() {
-      _isLoading = true;
-    });
+    widget.viewModel.addListener(_viewModelListener);
 
     // Tải dữ liệu người dùng nếu có userId
     if (widget.userId != null) {
       // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
       Future.microtask(() => _loadUserData());
-    } else {
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _birthDateController.dispose();
+    _phoneController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
       setState(() {
-        _isLoading = false;
+        // Update UI when viewModel changes
+        if (widget.viewModel.user != null && !widget.viewModel.isLoading) {
+          _updateFormWithUserData(widget.viewModel.user!);
+        }
       });
     }
   }
 
   Future<void> _loadUserData() async {
     try {
-      final viewModel =
-          Provider.of<UserDetailViewModel>(context, listen: false);
-      await viewModel.getUserById(widget.userId!);
-
-      if (viewModel.user != null) {
-        _updateFormWithUserData(viewModel.user!);
-      }
-
-      setState(() {
-        _isLoading = false;
-        _errorMessage = viewModel.errorMessage;
-      });
+      await widget.viewModel.getUserById(widget.userId!);
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = "Không thể tải thông tin người dùng: ${e.toString()}";
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -91,60 +95,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     _lastNameController.text = user.lastName;
     _phoneController.text = user.phoneNumber ?? '';
 
-    // Xử lý ngày sinh
-    if (user.birthDate != null) {
-      if (user.birthDate is String) {
-        // Nếu là chuỗi định dạng yyyy-MM-dd, chuyển sang dd/MM/yyyy
-        try {
-          final date = DateFormat('yyyy-MM-dd').parse(user.birthDate as String);
-          _birthDateController.text = DateFormat('dd/MM/yyyy').format(date);
-        } catch (e) {
-          _birthDateController.text = user.birthDate as String;
-        }
-      } else if (user.birthDate is DateTime) {
-        _birthDateController.text =
-            DateFormat('dd/MM/yyyy').format(user.birthDate as DateTime);
-      }
-    } else {
-      // Nếu ngày sinh là null, để trống
-      _birthDateController.text = '';
-    }
+    // Format and set birthdate
+    _birthDateController.text =
+        widget.viewModel.formatBirthDateForDisplay(user.birthDate);
 
-    // Xử lý giới tính
-    if (user.gender != null) {
-      // Tìm key trong genderMap có value = user.gender
-      final genderEntry = genderMap.entries.firstWhere(
-        (entry) =>
-            entry.value.toUpperCase() == user.gender.toString().toUpperCase(),
-        orElse: () => const MapEntry(
-            'Nam', 'MALE'), // Mặc định là 'Nam' nếu không tìm thấy
-      );
-      selectedGender = genderEntry.key;
-    }
+    // Set gender
+    selectedGender = widget.viewModel.getGenderDisplayValue(user.gender);
 
-    // Tìm key trong roleMap có value = user.role.id
-    final roleEntry = roleMap.entries.firstWhere(
-      (entry) => entry.value == user.role.id,
-      orElse: () =>
-          const MapEntry('User', 2), // Mặc định là 'User' nếu không tìm thấy
-    );
-    selectedRole = roleEntry.key;
+    // Set role
+    selectedRole = widget.viewModel.getRoleDisplayValue(user.role.id);
   }
-
-  // Ánh xạ giữa giá trị hiển thị và giá trị thực cho giới tính
-  final Map<String, dynamic> genderMap = {
-    'Nam': 'MALE',
-    'Nữ': 'FEMALE',
-    'Khác': 'OTHER',
-  };
-
-  // Ánh xạ giữa giá trị hiển thị và giá trị thực cho vai trò
-  final Map<String, int> roleMap = {
-    'Admin': 1,
-    'User': 2,
-    'Staff': 3,
-    'Manager': 4,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -159,9 +119,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         },
         isEditMode: isEditMode,
       ),
-      body: _isLoading
+      body: widget.viewModel.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
+          : widget.viewModel.errorMessage != null
               ? _buildErrorView()
               : Form(
                   key: _formKey,
@@ -188,21 +148,20 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                   label: 'Mật khẩu mới (không bắt buộc)',
                                   enabled: true,
                                   hintText: 'Nhập để thay đổi mật khẩu',
-                                  obscureText: !_isPasswordVisible,
+                                  obscureText:
+                                      !widget.viewModel.isPasswordVisible,
                                   textColor: Colors.black,
                                   fillColor: Colors.white,
                                 ),
                               ),
                               IconButton(
                                 icon: Icon(
-                                  _isPasswordVisible
+                                  widget.viewModel.isPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                 ),
                                 onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
+                                  widget.viewModel.togglePasswordVisibility();
                                 },
                               ),
                               const SizedBox(width: 12),
@@ -281,7 +240,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                               child: DetailDropdown(
                                 value: selectedGender,
                                 items: const ['Nam', 'Nữ', 'Khác'],
-                                valueMap: genderMap,
+                                valueMap: widget.viewModel.getGenderMap,
                                 onChanged: isEditMode
                                     ? (String? newValue) {
                                         if (newValue != null) {
@@ -356,7 +315,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Text(
-              _errorMessage ?? "Không thể tải thông tin người dùng",
+              widget.viewModel.errorMessage ??
+                  "Không thể tải thông tin người dùng",
               style: TextStyle(
                 color: Colors.grey[600],
               ),
@@ -435,16 +395,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   }
 
   void _generateRandomPassword() {
-    String randomPassword = _createRandomPassword();
+    String randomPassword = widget.viewModel.generateRandomPassword();
     setState(() {
       _passwordController.text = randomPassword;
     });
 
-    // Sao chép email và mật khẩu vào clipboard
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final clipboardData = 'Email: $email\nMật khẩu: $password';
-    Clipboard.setData(ClipboardData(text: clipboardData));
+    // Copy email and password to clipboard
+    widget.viewModel.copyCredentialsToClipboard(
+        _emailController.text, _passwordController.text);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Email và mật khẩu đã được sao chép vào clipboard!'),
@@ -453,54 +412,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     );
   }
 
-  String _createRandomPassword() {
-    const String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const String lower = 'abcdefghijklmnopqrstuvwxyz';
-    const String digits = '0123456789';
-    const String special = '@#\$%&*!';
-
-    String password = '';
-    password +=
-        upper[(DateTime.now().millisecondsSinceEpoch % upper.length).toInt()];
-    password +=
-        lower[(DateTime.now().millisecondsSinceEpoch % lower.length).toInt()];
-    password +=
-        digits[(DateTime.now().millisecondsSinceEpoch % digits.length).toInt()];
-    password += special[
-        (DateTime.now().millisecondsSinceEpoch % special.length).toInt()];
-
-    // Thêm các ký tự ngẫu nhiên khác để đạt độ dài tối thiểu (ví dụ: 8 ký tự)
-    const String allChars = upper + lower + digits + special;
-    for (int i = 4; i < 8; i++) {
-      password += allChars[
-          (DateTime.now().millisecondsSinceEpoch % allChars.length).toInt()];
-    }
-
-    // Trộn mật khẩu và trả về dưới dạng chuỗi
-    return (password.split('')..shuffle()).join(); // Trả về chuỗi đã trộn
-  }
-
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true; // Hiển thị loading indicator
-      });
+      // Get roleId from roleMap
+      final int roleId = widget.viewModel.getRoleMap[selectedRole] ?? 2;
 
-      final viewModel =
-          Provider.of<UserDetailViewModel>(context, listen: false);
+      // Get gender value
+      final String genderValue =
+          widget.viewModel.getGenderMap[selectedGender] ?? 'MALE';
 
-      // Lấy giá trị thực của gender từ genderMap
-      final String genderValue = genderMap[selectedGender] ?? 'MALE';
-
-      // Kiểm tra xem giá trị gender đã được lấy đúng chưa
-      print('Selected Gender: $selectedGender');
-      print('Gender Value: $genderValue');
-
-      // Lấy roleId từ roleMap
-      final int roleId =
-          roleMap[selectedRole] ?? 2; // Mặc định là User nếu không tìm thấy
-
-      // Tạo đối tượng User từ dữ liệu form
+      // Create updated user from form data
       final updatedUser = User(
         id: widget.userId!,
         email: _emailController.text,
@@ -510,24 +431,20 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             ? null
             : _birthDateController.text,
         phoneNumber: _phoneController.text,
-        gender: genderValue, // Sử dụng giá trị thực của gender
-        role: Role(name: selectedRole, id: roleId), // Sử dụng roleId từ roleMap
+        gender: genderValue,
+        role: Role(name: selectedRole, id: roleId),
       );
 
-      // Cập nhật người dùng
-      viewModel
+      // Update user
+      widget.viewModel
           .updateUser(
               updatedUser,
               _passwordController.text.isNotEmpty
                   ? _passwordController.text
                   : null)
           .then((success) {
-        setState(() {
-          _isLoading = false;
-        });
-
         if (success) {
-          // Chỉ hiển thị thông báo thành công và tắt chế độ chỉnh sửa khi cập nhật thực sự thành công
+          // Turn off edit mode if update is successful
           setState(() {
             isEditMode = false;
           });
@@ -538,21 +455,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             ),
           );
         } else {
-          // Hiển thị thông báo lỗi từ ViewModel
+          // Show error from ViewModel
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Lỗi: ${viewModel.errorMessage ?? "Không thể cập nhật người dùng"}'),
+                  'Lỗi: ${widget.viewModel.errorMessage ?? "Không thể cập nhật người dùng"}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }).catchError((error) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        // Hiển thị thông báo lỗi
+        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi: ${error.toString()}'),
