@@ -146,6 +146,10 @@ class _ProductScreenState extends State<ProductScreen> {
       headerBuilder: (context) => _buildHeader(),
       itemBuilder: (context, product, index) => _buildProductItem(product),
       endOfListWidget: _buildEndOfList(),
+      useListView: true,
+      preloadItemCount: 8,
+      loadMoreThreshold: 500,
+      initialKeepAliveCount: 5,
     );
   }
 

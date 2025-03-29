@@ -145,6 +145,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
       headerBuilder: (context) => _buildHeader(),
       itemBuilder: (context, category, index) => _buildCategoryItem(category),
       endOfListWidget: _buildEndOfList(),
+      useListView: true,
+      preloadItemCount: 8,
+      loadMoreThreshold: 500,
+      initialKeepAliveCount: 5,
     );
   }
 

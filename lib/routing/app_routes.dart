@@ -34,28 +34,42 @@ import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// Application routing configuration class
 class AppRoutes {
+  // Authentication routes
   static const String login = '/login';
+
+  // Main routes
   static const String dashboard = '/dashboard';
+  static const String error = '/error';
+
+  // Product routes
   static const String products = '/products';
   static const String productDetail = '/productDetail';
   static const String editProduct = '/editProduct';
   static const String addProduct = '/addProduct';
-  static const String reviews = '/reviews';
-  static const String orders = '/orders';
+
+  // Category routes
   static const String categories = '/categories';
   static const String categoryDetail = '/categoryDetail';
   static const String addCategory = '/addCategory';
+
+  // User routes
   static const String users = '/users';
   static const String userDetail = '/userDetail';
   static const String addUser = '/addUser';
-  static const String promotions = '/promotions';
-  static const String error = '/error';
 
+  // Other feature routes
+  static const String reviews = '/reviews';
+  static const String orders = '/orders';
+  static const String promotions = '/promotions';
+
+  /// Main route generator function used by the Flutter navigator
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
 
-    MaterialPageRoute _createRoute(Widget screen) {
+    // Helper function to create MaterialPageRoute with consistent settings
+    MaterialPageRoute<dynamic> _createRoute(Widget screen) {
       return MaterialPageRoute(
         builder: (_) => screen,
         settings: settings,
@@ -63,179 +77,49 @@ class AppRoutes {
     }
 
     switch (settings.name) {
+      // Auth routes
       case login:
-        return MaterialPageRoute(
-          builder: (context) {
-            final authRepository =
-                Provider.of<AuthRepository>(context, listen: false);
-            final loginViewModel = LoginViewModel(authRepository);
-            return LoginScreen(viewModel: loginViewModel);
-          },
-          settings: settings,
-        );
+        return _handleLoginRoute(settings);
+
+      // Main routes
       case dashboard:
-        return MaterialPageRoute(
-          builder: (context) {
-            final dashboardRepository =
-                Provider.of<DashboardRepository>(context, listen: false);
-            final dashboardViewModel = DashboardViewModel(dashboardRepository);
-            return DashboardScreen(viewModel: dashboardViewModel);
-          },
-          settings: settings,
-        );
+        return _handleDashboardRoute(settings);
 
-      // Product case
+      // Product routes
       case products:
-        return MaterialPageRoute(
-          builder: (context) {
-            final productRepository =
-                Provider.of<ProductRepository>(context, listen: false);
-            final productScreenViewModel =
-                ProductScreenViewModel(productRepository);
-            return ProductScreen(viewModel: productScreenViewModel);
-          },
-          settings: settings,
-        );
+        return _handleProductsRoute(settings);
       case productDetail:
-        final productId = args?['id'];
-        return MaterialPageRoute(
-          builder: (context) {
-            final productRepository =
-                Provider.of<ProductRepository>(context, listen: false);
-            final productDetailViewModel =
-                ProductDetailViewModel(productRepository);
-            return ProductDetailScreen(
-              viewModel: productDetailViewModel,
-              productId: productId,
-            );
-          },
-          settings: settings,
-        );
+        return _handleProductDetailRoute(settings, args);
       case editProduct:
-        final productId = args?['id'];
-        return MaterialPageRoute(
-          builder: (context) {
-            final productRepository =
-                Provider.of<ProductRepository>(context, listen: false);
-            final categoryRepository =
-                Provider.of<CategoryRepository>(context, listen: false);
-            final editProductViewModel = EditProductViewModel(
-              productRepository,
-              categoryRepository,
-            );
-            return EditProductScreen(
-              viewModel: editProductViewModel,
-              productId: productId,
-            );
-          },
-          settings: settings,
-        );
+        return _handleEditProductRoute(settings, args);
       case addProduct:
-        return MaterialPageRoute(
-          builder: (context) {
-            final productRepository =
-                Provider.of<ProductRepository>(context, listen: false);
-            final categoryRepository =
-                Provider.of<CategoryRepository>(context, listen: false);
-            final addProductViewModel = AddProductViewModel(
-              productRepository,
-              categoryRepository,
-            );
-            return AddProductScreen(viewModel: addProductViewModel);
-          },
-          settings: settings,
-        );
+        return _handleAddProductRoute(settings);
 
-      // Review case
+      // Category routes
+      case categories:
+        return _handleCategoriesRoute(settings);
+      case categoryDetail:
+        return _handleCategoryDetailRoute(settings, args);
+      case addCategory:
+        return _handleAddCategoryRoute(settings);
+
+      // User routes
+      case users:
+        return _handleUsersRoute(settings);
+      case userDetail:
+        return _handleUserDetailRoute(settings, args);
+      case addUser:
+        return _handleAddUserRoute(settings);
+
+      // Simple routes that don't need special handling
       case reviews:
         return _createRoute(const ReviewScreen());
-
-      // Order case
       case orders:
         return _createRoute(const OrderScreen());
-
-      // Category case
-      case categories:
-        return MaterialPageRoute(
-          builder: (context) {
-            final categoryRepository =
-                Provider.of<CategoryRepository>(context, listen: false);
-            final categoryScreenViewModel =
-                CategoryScreenViewModel(categoryRepository);
-            return CategoryScreen(viewModel: categoryScreenViewModel);
-          },
-          settings: settings,
-        );
-      case categoryDetail:
-        final categoryId = args?['id'];
-        return MaterialPageRoute(
-          builder: (context) {
-            final categoryRepository =
-                Provider.of<CategoryRepository>(context, listen: false);
-            final categoryDetailViewModel =
-                CategoryDetailViewModel(categoryRepository);
-            return CategoryDetailScreen(
-              viewModel: categoryDetailViewModel,
-              isEditMode: false,
-              categoryId: categoryId,
-            );
-          },
-          settings: settings,
-        );
-      case addCategory:
-        return MaterialPageRoute(
-          builder: (context) {
-            final categoryRepository =
-                Provider.of<CategoryRepository>(context, listen: false);
-            final addCategoryViewModel =
-                AddCategoryViewModel(categoryRepository);
-            return AddCategoryScreen(viewModel: addCategoryViewModel);
-          },
-          settings: settings,
-        );
-
-      // User case
-      case users:
-        return MaterialPageRoute(
-          builder: (context) {
-            final userRepository =
-                Provider.of<UserRepository>(context, listen: false);
-            final userScreenViewModel = UserScreenViewModel(userRepository);
-            return UserScreen(viewModel: userScreenViewModel);
-          },
-          settings: settings,
-        );
-      case userDetail:
-        final userId = args?['id'];
-        return MaterialPageRoute(
-          builder: (context) {
-            final userRepository =
-                Provider.of<UserRepository>(context, listen: false);
-            final userDetailViewModel = UserDetailViewModel(userRepository);
-            return UserDetailScreen(
-              viewModel: userDetailViewModel,
-              isEditMode: false,
-              userId: userId,
-            );
-          },
-          settings: settings,
-        );
-      case addUser:
-        return MaterialPageRoute(
-          builder: (context) {
-            final userRepository =
-                Provider.of<UserRepository>(context, listen: false);
-            final addUserViewModel = AddUserViewModel(userRepository);
-            return AddUserScreen(viewModel: addUserViewModel);
-          },
-          settings: settings,
-        );
-
-      // Promotion case
       case promotions:
         return _createRoute(const PromotionScreen());
 
-      // Error case
+      // Error handling routes
       case error:
         return _createRoute(ErrorScreen(
           title: args?['title'] as String?,
@@ -247,5 +131,198 @@ class AppRoutes {
           message: 'Trang bạn đang tìm kiếm không tồn tại.',
         ));
     }
+  }
+
+  // Authentication route handlers
+  static Route<dynamic> _handleLoginRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final authRepository =
+            Provider.of<AuthRepository>(context, listen: false);
+        final loginViewModel = LoginViewModel(authRepository);
+        return LoginScreen(viewModel: loginViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Main route handlers
+  static Route<dynamic> _handleDashboardRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final dashboardRepository =
+            Provider.of<DashboardRepository>(context, listen: false);
+        final dashboardViewModel = DashboardViewModel(dashboardRepository);
+        return DashboardScreen(viewModel: dashboardViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Product route handlers
+  static Route<dynamic> _handleProductsRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+        final productScreenViewModel =
+            ProductScreenViewModel(productRepository);
+        return ProductScreen(viewModel: productScreenViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleProductDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final productId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+        final productDetailViewModel =
+            ProductDetailViewModel(productRepository);
+        return ProductDetailScreen(
+          viewModel: productDetailViewModel,
+          productId: productId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleEditProductRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final productId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final editProductViewModel = EditProductViewModel(
+          productRepository,
+          categoryRepository,
+        );
+        return EditProductScreen(
+          viewModel: editProductViewModel,
+          productId: productId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleAddProductRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final addProductViewModel = AddProductViewModel(
+          productRepository,
+          categoryRepository,
+        );
+        return AddProductScreen(viewModel: addProductViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Category route handlers
+  static Route<dynamic> _handleCategoriesRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final categoryScreenViewModel =
+            CategoryScreenViewModel(categoryRepository);
+        return CategoryScreen(viewModel: categoryScreenViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleCategoryDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final categoryId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final categoryDetailViewModel =
+            CategoryDetailViewModel(categoryRepository);
+        return CategoryDetailScreen(
+          viewModel: categoryDetailViewModel,
+          isEditMode: false,
+          categoryId: categoryId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleAddCategoryRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final addCategoryViewModel = AddCategoryViewModel(categoryRepository);
+        return AddCategoryScreen(viewModel: addCategoryViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // User route handlers
+  static Route<dynamic> _handleUsersRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final userRepository =
+            Provider.of<UserRepository>(context, listen: false);
+        final userScreenViewModel = UserScreenViewModel(userRepository);
+        return UserScreen(viewModel: userScreenViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleUserDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final userId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final userRepository =
+            Provider.of<UserRepository>(context, listen: false);
+        final userDetailViewModel = UserDetailViewModel(userRepository);
+        return UserDetailScreen(
+          viewModel: userDetailViewModel,
+          isEditMode: false,
+          userId: userId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleAddUserRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final userRepository =
+            Provider.of<UserRepository>(context, listen: false);
+        final addUserViewModel = AddUserViewModel(userRepository);
+        return AddUserScreen(viewModel: addUserViewModel);
+      },
+      settings: settings,
+    );
   }
 }

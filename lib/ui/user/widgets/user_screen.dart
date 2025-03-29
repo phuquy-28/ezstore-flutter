@@ -142,6 +142,10 @@ class _UserScreenState extends State<UserScreen> {
       headerBuilder: (context) => _buildHeader(),
       itemBuilder: (context, user, index) => _buildUserItem(user),
       endOfListWidget: _buildEndOfList(),
+      useListView: true,
+      preloadItemCount: 8,
+      loadMoreThreshold: 500,
+      initialKeepAliveCount: 5,
     );
   }
 
