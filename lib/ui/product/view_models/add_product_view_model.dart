@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
 import 'package:ezstore_flutter/domain/models/category/category.dart' as models;
+import 'package:flutter/material.dart';
 
 // Class để lưu thông tin chi tiết của mỗi kích thước trong một biến thể
 class VariantDetail {
@@ -336,6 +337,7 @@ class AddProductViewModel extends ChangeNotifier {
     } else {
       _nameErrorText = null;
     }
+    notifyListeners();
   }
 
   void validateDescription() {
@@ -348,6 +350,7 @@ class AddProductViewModel extends ChangeNotifier {
     } else {
       _descriptionErrorText = null;
     }
+    notifyListeners();
   }
 
   void validatePrice() {
@@ -356,6 +359,7 @@ class AddProductViewModel extends ChangeNotifier {
     } else {
       _priceErrorText = null;
     }
+    notifyListeners();
   }
 
   void validateProductImages() {
@@ -364,6 +368,7 @@ class AddProductViewModel extends ChangeNotifier {
     } else {
       _imagesErrorText = null;
     }
+    notifyListeners();
   }
 
   void validateCategory() {
@@ -374,6 +379,7 @@ class AddProductViewModel extends ChangeNotifier {
     } else {
       _categoryErrorText = null;
     }
+    notifyListeners();
   }
 
   void validateVariant(int index) {
@@ -390,6 +396,7 @@ class AddProductViewModel extends ChangeNotifier {
         validateSizeDetail(index, i);
       }
     }
+    notifyListeners();
   }
 
   void validateSizeDetail(int variantIndex, int detailIndex) {
@@ -406,6 +413,7 @@ class AddProductViewModel extends ChangeNotifier {
         _variantDetailErrors[variantIndex]![detailIndex] = errors;
       }
     }
+    notifyListeners();
   }
 
   bool validateAllVariants() {
@@ -459,7 +467,6 @@ class AddProductViewModel extends ChangeNotifier {
         _imagesErrorText == null &&
         _categoryErrorText == null;
 
-    notifyListeners();
     return formValid && variantsValid;
   }
 
@@ -500,6 +507,7 @@ class AddProductViewModel extends ChangeNotifier {
   void resetValidation() {
     _shouldValidateVariants = false;
     _variantErrors.clear();
+    _variantDetailErrors.clear();
     _nameErrorText = null;
     _descriptionErrorText = null;
     _priceErrorText = null;
@@ -512,11 +520,14 @@ class AddProductViewModel extends ChangeNotifier {
     // Always run validation
     if (!validateAll()) {
       // Nếu có lỗi xác thực, trả về thông báo lỗi
-      _setErrorMessage(_getFirstValidationError());
+      _errorMessage = _getFirstValidationError();
+      notifyListeners();
       return false;
     }
 
-    _setLoading(true);
+    _isLoading = true;
+    notifyListeners();
+
     try {
       // Chuyển đổi danh sách ProductVariant thành danh sách Map<String, dynamic>
       final List<Map<String, dynamic>> variantMaps = [];
@@ -546,17 +557,21 @@ class AddProductViewModel extends ChangeNotifier {
       );
 
       if (result != null) {
-        _setErrorMessage(null);
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
         return true;
       } else {
-        _setErrorMessage('Không thể tạo sản phẩm mới');
+        _errorMessage = 'Không thể tạo sản phẩm mới';
+        _isLoading = false;
+        notifyListeners();
         return false;
       }
     } catch (e) {
-      _setErrorMessage('Không thể tạo sản phẩm mới: $e');
+      _errorMessage = 'Không thể tạo sản phẩm mới: $e';
+      _isLoading = false;
+      notifyListeners();
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
 
@@ -593,15 +608,5 @@ class AddProductViewModel extends ChangeNotifier {
     }
 
     return 'Vui lòng kiểm tra lại thông tin sản phẩm';
-  }
-
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
-  void _setErrorMessage(String? message) {
-    _errorMessage = message;
-    notifyListeners();
   }
 }

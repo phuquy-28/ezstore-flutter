@@ -5,13 +5,16 @@ import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
 import 'package:ezstore_flutter/ui/core/shared/search_field.dart';
 import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:ezstore_flutter/ui/category/view_models/category_screen_view_model.dart';
 import 'package:ezstore_flutter/ui/category/widgets/category_card.dart';
-import 'package:ezstore_flutter/routing/app_routes.dart';
 
 class CategoryScreen extends StatefulWidget {
-  const CategoryScreen({super.key});
+  final CategoryScreenViewModel viewModel;
+
+  const CategoryScreen({
+    Key? key,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
@@ -19,200 +22,227 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _isInitialized = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    widget.viewModel.addListener(_viewModelListener);
+
     // Theo dõi sự kiện cuộn
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 200) {
-        // Gọi loadMoreData khi cuộn gần đến cuối trang
-        final viewModel =
-            Provider.of<CategoryScreenViewModel>(context, listen: false);
-        if (!viewModel.isLoading && viewModel.hasMoreData) {
-          viewModel.loadMoreData();
-        }
-      }
+    _scrollController.addListener(_handleScroll);
+
+    // Khởi tạo dữ liệu
+    Future.microtask(() {
+      widget.viewModel.initData();
     });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose(); // Giải phóng bộ điều khiển cuộn
+    _scrollController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Chỉ gọi loadData một lần sau khi widget được khởi tạo
-    if (!_isInitialized) {
-      _isInitialized = true;
-      // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
-      Future.microtask(() {
-        Provider.of<CategoryScreenViewModel>(context, listen: false).loadData();
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        _isLoading = widget.viewModel.isLoading;
       });
+    }
+  }
+
+  void _handleScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      widget.viewModel.handleScrollToEnd();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<CategoryScreenViewModel>(context);
-
     return Scaffold(
       appBar: CustomAppBar(
         title: AppStrings.categories,
         additionalActions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              _navigateToAddCategory(context);
-            },
+            onPressed: () => widget.viewModel.navigateToAddCategory(context),
           ),
         ],
       ),
-      drawer: CustomDrawer(),
-      body: Column(
+      drawer: const CustomDrawer(),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // Hiển thị loading khi đang tải dữ liệu ban đầu
+    if (_isLoading && widget.viewModel.items == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Hiển thị lỗi nếu có
+    if (widget.viewModel.error != null) {
+      return _buildErrorView();
+    }
+
+    // Hiển thị danh sách danh mục
+    return _buildCategoryList();
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (viewModel.isLoading && viewModel.items == null)
-            const Expanded(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (viewModel.errorMessage != null)
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Đã xảy ra lỗi",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      viewModel.errorMessage!,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => viewModel.loadData(),
-                      child: const Text("Thử lại"),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: PaginatedListView<Category>(
-                items: viewModel.items ?? [],
-                isLoading: viewModel.isLoading,
-                hasMoreData: viewModel.hasMoreData,
-                onLoadMore: () => viewModel.loadMoreData(),
-                onRefresh: () => viewModel.refresh(),
-                padding: const EdgeInsets.all(0),
-                separatorHeight: AppSizes.paddingSmall,
-                showEmptyWidget: false,
-                headerBuilder: (context) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SearchField(
-                      hintText: "Tìm kiếm theo tên danh mục",
-                      initialValue: viewModel.searchKeyword,
-                      onChanged: (value) {
-                        // Không làm gì khi thay đổi, chỉ cập nhật UI
-                      },
-                      onSubmitted: (value) {
-                        // Gọi tìm kiếm khi người dùng nhấn Enter
-                        viewModel.searchCategories(value);
-                      },
-                      onClear: () {
-                        // Xóa tìm kiếm và tải lại dữ liệu ban đầu
-                        viewModel.clearSearch();
-                      },
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: AppSizes.paddingNormal,
-                        right: AppSizes.paddingNormal,
-                        bottom: AppSizes.paddingSmall,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            viewModel.searchKeyword != null
-                                ? "Kết quả tìm kiếm: ${viewModel.totalItems} danh mục"
-                                : "Tổng số: ${viewModel.totalItems} danh mục",
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                          if (viewModel.searchKeyword != null) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              "cho '${viewModel.searchKeyword}'",
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontStyle: FontStyle.italic,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                itemBuilder: (context, category, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.paddingNormal),
-                    child: CategoryCard(
-                      category: category,
-                      onViewDetails: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.categoryDetail,
-                          arguments: {'id': category.id},
-                        );
-                      },
-                    ),
-                  );
-                },
-                endOfListWidget: Text(
-                  viewModel.searchKeyword != null
-                      ? "Đã hiển thị tất cả ${viewModel.totalItems} kết quả cho '${viewModel.searchKeyword}'"
-                      : "Đã hiển thị tất cả ${viewModel.totalItems} danh mục",
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Đã xảy ra lỗi",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
             ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              widget.viewModel.error!,
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: widget.viewModel.handleRetry,
+            child: const Text("Thử lại"),
+          ),
         ],
       ),
     );
   }
 
-  void _navigateToAddCategory(BuildContext context) {
-    Navigator.pushNamed(context, AppRoutes.addCategory);
+  Widget _buildCategoryList() {
+    return PaginatedListView<Category>(
+      items: widget.viewModel.items ?? [],
+      isLoading: _isLoading,
+      hasMoreData: widget.viewModel.hasMorePages,
+      onLoadMore: widget.viewModel.loadNextPage,
+      onRefresh: widget.viewModel.handleRefresh,
+      padding: EdgeInsets.zero,
+      separatorHeight: AppSizes.paddingSmall,
+      showEmptyWidget: false,
+      headerBuilder: (context) => _buildHeader(),
+      itemBuilder: (context, category, index) => _buildCategoryItem(category),
+      endOfListWidget: _buildEndOfList(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SearchField(
+          hintText: "Tìm kiếm theo tên danh mục",
+          initialValue: widget.viewModel.searchKeyword,
+          onChanged: (value) {
+            // Không làm gì khi thay đổi, chỉ cập nhật UI
+          },
+          onSubmitted: widget.viewModel.handleSearchSubmitted,
+          onClear: widget.viewModel.handleClearSearch,
+        ),
+        _buildSearchResult(),
+      ],
+    );
+  }
+
+  Widget _buildSearchResult() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSizes.paddingNormal,
+        right: AppSizes.paddingNormal,
+        bottom: AppSizes.paddingSmall,
+      ),
+      child: Row(
+        children: [
+          Text(
+            widget.viewModel.searchKeyword != null
+                ? "Kết quả tìm kiếm: ${widget.viewModel.totalCategories} danh mục"
+                : "Tổng số: ${widget.viewModel.totalCategories} danh mục",
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          if (widget.viewModel.searchKeyword != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              "cho '${widget.viewModel.searchKeyword}'",
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryItem(Category category) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingNormal),
+      child: RepaintBoundary(
+        child: CategoryCard(
+          category: category,
+          onViewDetails: () =>
+              widget.viewModel.navigateToCategory(context, category.id ?? 0),
+          onDelete: _handleDeleteCategory,
+          onEditSuccess: widget.viewModel.handleRefresh,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteCategory(int categoryId) async {
+    try {
+      final success = await widget.viewModel.deleteCategory(categoryId);
+      if (mounted) {
+        widget.viewModel.showDeleteResult(context, success);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xóa danh mục thất bại: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildEndOfList() {
+    return Text(
+      widget.viewModel.searchKeyword != null
+          ? "Đã hiển thị tất cả ${widget.viewModel.totalCategories} kết quả cho '${widget.viewModel.searchKeyword}'"
+          : "Đã hiển thị tất cả ${widget.viewModel.totalCategories} danh mục",
+      style: TextStyle(
+        color: Colors.grey[600],
+        fontStyle: FontStyle.italic,
+      ),
+    );
   }
 }

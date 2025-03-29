@@ -12,14 +12,7 @@ import 'package:ezstore_flutter/data/services/shared_preference_service.dart';
 import 'package:ezstore_flutter/data/services/upload_service.dart';
 import 'package:ezstore_flutter/data/services/user_service.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
-import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.dart';
-import 'package:ezstore_flutter/ui/category/view_models/category_detail_view_model.dart';
-import 'package:ezstore_flutter/ui/category/view_models/category_screen_view_model.dart';
 import 'package:ezstore_flutter/ui/drawer/viewmodel/drawer_viewmodel.dart';
-import 'package:ezstore_flutter/ui/product/view_models/add_product_view_model.dart';
-import 'package:ezstore_flutter/ui/product/view_models/edit_product_view_model.dart';
-import 'package:ezstore_flutter/ui/product/view_models/product_detail_view_model.dart';
-import 'package:ezstore_flutter/ui/product/view_models/product_screen_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -77,36 +70,6 @@ List<SingleChildWidget> get providers {
     ChangeNotifierProvider(
         create: (context) => UserInfoProvider(
               context.read<UserRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => CategoryScreenViewModel(
-              context.read<CategoryRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => CategoryDetailViewModel(
-              context.read<CategoryRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => AddCategoryViewModel(
-              context.read<CategoryRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => ProductScreenViewModel(
-              context.read<ProductRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => ProductDetailViewModel(
-              context.read<ProductRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => EditProductViewModel(
-              context.read<ProductRepository>(),
-              context.read<CategoryRepository>(),
-            )),
-    ChangeNotifierProvider(
-        create: (context) => AddProductViewModel(
-              context.read<ProductRepository>(),
-              context.read<CategoryRepository>(),
             )),
   ];
 }

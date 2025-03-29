@@ -1,14 +1,18 @@
+import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.dart';
+import 'package:ezstore_flutter/ui/core/shared/custom_button.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_app_bar.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_text_field.dart';
 import 'package:flutter/material.dart';
-import '../../../ui/core/shared/custom_button.dart';
-import '../../../ui/core/shared/detail_app_bar.dart';
-import '../../../ui/core/shared/detail_text_field.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import '../view_models/add_category_view_model.dart';
 
 class AddCategoryScreen extends StatefulWidget {
-  const AddCategoryScreen({Key? key}) : super(key: key);
+  final AddCategoryViewModel viewModel;
+
+  const AddCategoryScreen({
+    Key? key,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   _AddCategoryScreenState createState() => _AddCategoryScreenState();
@@ -17,33 +21,52 @@ class AddCategoryScreen extends StatefulWidget {
 class _AddCategoryScreenState extends State<AddCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  
+
   File? _selectedImageFile;
-  bool _isImageSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_viewModelListener);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        // Update UI when viewModel changes
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AddCategoryViewModel>(
-      builder: (context, viewModel, child) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: DetailAppBar(
-            title: 'Thêm danh mục mới',
-            onEditToggle: () {},
-            isEditMode: false,
-            showEditButton: false,
-          ),
-          body: viewModel.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16.0),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: DetailAppBar(
+        title: 'Thêm danh mục mới',
+        onEditToggle: () {},
+        isEditMode: false,
+        showEditButton: false,
+      ),
+      body: widget.viewModel.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  if (widget.viewModel.isImageSelected) _buildImagePreview(),
+                  const SizedBox(height: 24),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_isImageSelected) _buildImagePreview(),
-
-                      const SizedBox(height: 24),
-
                       DetailTextField(
                         controller: _nameController,
                         label: 'Tên danh mục',
@@ -51,51 +74,63 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                         hintText: 'Nhập tên danh mục',
                         textColor: Colors.black,
                         fillColor: Colors.white,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Vui lòng nhập tên danh mục';
-                          }
-                          return null;
-                        },
                       ),
-
-                      const SizedBox(height: 24),
-
-                      OutlinedButton(
-                        onPressed: _selectImage,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.black),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      if (widget.viewModel.nameErrorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0, left: 12.0),
+                          child: Text(
+                            widget.viewModel.nameErrorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.image, color: Colors.black),
-                              SizedBox(width: 8),
-                              Text(
-                                'Chọn hình ảnh',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      CustomButton(
-                        text: 'Thêm danh mục',
-                        onPressed: () => _handleSubmit(viewModel),
-                      ),
                     ],
                   ),
-                ),
-        );
-      },
+                  const SizedBox(height: 24),
+                  OutlinedButton(
+                    onPressed: _selectImage,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image, color: Colors.black),
+                          SizedBox(width: 8),
+                          Text(
+                            'Chọn hình ảnh',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (widget.viewModel.imageErrorText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0, left: 12.0),
+                      child: Text(
+                        widget.viewModel.imageErrorText!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 32),
+                  CustomButton(
+                    text: 'Thêm danh mục',
+                    onPressed: _handleSubmit,
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -140,8 +175,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
       if (image != null) {
         setState(() {
           _selectedImageFile = File(image.path);
-          _isImageSelected = true;
         });
+
+        widget.viewModel.updateImageSelected(true);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -160,40 +196,35 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     }
   }
 
-  void _handleSubmit(AddCategoryViewModel viewModel) async {
-    if (_formKey.currentState!.validate()) {
-      if (!_isImageSelected || _selectedImageFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vui lòng chọn hình ảnh cho danh mục'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
+  void _handleSubmit() async {
+    // Reset validation state
+    widget.viewModel.resetValidation();
 
-      final success = await viewModel.createCategory(
-        _nameController.text,
-        _selectedImageFile!,
+    // Validate and attempt to create category
+    final success = await widget.viewModel.createCategory(
+      _nameController.text,
+      _selectedImageFile,
+    );
+
+    if (success) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thêm danh mục thành công'),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      if (success) {
-        if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thêm danh mục thành công'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      Navigator.pop(context, true); // Trả về true để refresh danh sách
+    } else {
+      if (!mounted) return;
 
-        Navigator.pop(context, true); // Trả về true để refresh danh sách
-      } else {
-        if (!mounted) return;
-        
+      // If there's an error message, show it
+      if (widget.viewModel.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(viewModel.errorMessage ?? 'Thêm danh mục thất bại'),
+            content: Text(widget.viewModel.errorMessage!),
             backgroundColor: Colors.red,
           ),
         );

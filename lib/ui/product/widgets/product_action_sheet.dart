@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 
 class ProductActionSheet extends ActionSheet<ProductResponse> {
   final Function(int) onDeleteProduct;
+  final VoidCallback? onEditSuccess;
 
   const ProductActionSheet({
     Key? key,
     required ProductResponse product,
     required this.onDeleteProduct,
+    this.onEditSuccess,
   }) : super(key: key, item: product);
 
   @override
@@ -18,7 +20,11 @@ class ProductActionSheet extends ActionSheet<ProductResponse> {
       context,
       AppRoutes.editProduct,
       arguments: {'id': item.id},
-    );
+    ).then((_) {
+      if (onEditSuccess != null) {
+        onEditSuccess!();
+      }
+    });
   }
 
   @override

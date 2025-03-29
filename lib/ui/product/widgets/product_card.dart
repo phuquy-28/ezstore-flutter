@@ -1,5 +1,4 @@
 import 'package:ezstore_flutter/domain/models/product/product_response.dart';
-import 'package:ezstore_flutter/routing/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,11 +7,15 @@ import 'product_action_sheet.dart';
 class ProductCard extends StatelessWidget {
   final ProductResponse product;
   final Function(int) onDelete;
+  final Function(int) onViewDetails;
+  final VoidCallback? onEditSuccess;
 
   const ProductCard({
     Key? key,
     required this.product,
     required this.onDelete,
+    required this.onViewDetails,
+    this.onEditSuccess,
   }) : super(key: key);
 
   @override
@@ -27,11 +30,7 @@ class ProductCard extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.productDetail,
-            arguments: {'id': product.id},
-          );
+          onViewDetails(product.id!);
         },
         child: Row(
           children: [
@@ -108,15 +107,7 @@ class ProductCard extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.more_vert),
                           onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return ProductActionSheet(
-                                  product: product,
-                                  onDeleteProduct: onDelete,
-                                );
-                              },
-                            );
+                            _showActionSheet(context);
                           },
                         ),
                       ],
@@ -174,6 +165,19 @@ class ProductCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showActionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ProductActionSheet(
+          product: product,
+          onDeleteProduct: onDelete,
+          onEditSuccess: onEditSuccess,
+        );
+      },
     );
   }
 

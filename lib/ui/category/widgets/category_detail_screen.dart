@@ -1,22 +1,22 @@
+import 'package:ezstore_flutter/domain/models/category/category.dart';
+import 'package:ezstore_flutter/ui/category/view_models/category_detail_view_model.dart';
+import 'package:ezstore_flutter/ui/core/shared/custom_button.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_app_bar.dart';
+import 'package:ezstore_flutter/ui/core/shared/detail_text_field.dart';
 import 'package:flutter/material.dart';
-import '../../../ui/core/shared/custom_button.dart';
-import '../../../ui/core/shared/detail_app_bar.dart';
-import '../../../ui/core/shared/detail_text_field.dart';
-import '../../../domain/models/category/category.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import '../view_models/category_detail_view_model.dart';
-import '../../../data/models/category/req_category.dart';
 
 class CategoryDetailScreen extends StatefulWidget {
   final bool isEditMode;
   final int categoryId;
+  final CategoryDetailViewModel viewModel;
 
   const CategoryDetailScreen({
     Key? key,
     this.isEditMode = false,
     required this.categoryId,
+    required this.viewModel,
   }) : super(key: key);
 
   @override
@@ -27,83 +27,100 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   late bool isEditMode;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
 
   String? _selectedImageUrl;
   bool _isImageChanged = false;
-  dynamic _selectedImageFile;
-  bool _isLoading = false;
+  File? _selectedImageFile;
 
   @override
   void initState() {
     super.initState();
     isEditMode = widget.isEditMode;
-    Future.microtask(() {
-      _loadCategoryData();
-    });
+    widget.viewModel.addListener(_viewModelListener);
+
+    // Tải dữ liệu danh mục nếu có categoryId
+    Future.microtask(() => _loadCategoryData());
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        // Update UI when viewModel changes
+        if (widget.viewModel.category != null && !widget.viewModel.isLoading) {
+          _updateFormWithCategoryData(widget.viewModel.category!);
+        }
+      });
+    }
   }
 
   Future<void> _loadCategoryData() async {
-    if (!mounted) return;
-
-    await Provider.of<CategoryDetailViewModel>(context, listen: false)
-        .getCategoryById(widget.categoryId);
-
-    if (!mounted) return;
-
-    final category =
-        Provider.of<CategoryDetailViewModel>(context, listen: false).category;
-    if (category != null) {
-      _updateFormWithCategoryData(category);
+    try {
+      await widget.viewModel.getCategoryById(widget.categoryId);
+    } catch (e) {
+      if (mounted) {
+        widget.viewModel.showErrorMessage(context, e.toString());
+      }
     }
   }
 
   void _updateFormWithCategoryData(Category category) {
     _nameController.text = category.name ?? '';
-    _imageUrlController.text = category.imageUrl ?? '';
     _selectedImageUrl = category.imageUrl;
     _isImageChanged = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CategoryDetailViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading || _isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    final isLoading =
+        widget.viewModel.isLoading || widget.viewModel.isSubmitting;
 
-        if (viewModel.errorMessage != null) {
-          return Scaffold(
-            appBar: DetailAppBar(
-              title: 'Chi tiết danh mục',
-              isEditMode: false,
-              onEditToggle: () {},
-            ),
-            body: _buildErrorView(viewModel.errorMessage!),
-          );
-        }
+    if (isLoading && widget.viewModel.category == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: DetailAppBar(
-            title: isEditMode ? 'Chỉnh sửa danh mục' : 'Chi tiết danh mục',
-            onEditToggle: () {
-              setState(() {
-                isEditMode = !isEditMode;
-              });
-            },
-            isEditMode: isEditMode,
-          ),
-          body: Form(
-            key: _formKey,
-            child: ListView(
+    if (widget.viewModel.errorMessage != null &&
+        widget.viewModel.category == null) {
+      return Scaffold(
+        appBar: DetailAppBar(
+          title: 'Chi tiết danh mục',
+          isEditMode: false,
+          onEditToggle: () {},
+        ),
+        body: _buildErrorView(widget.viewModel.errorMessage!),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: DetailAppBar(
+        title: isEditMode ? 'Chỉnh sửa danh mục' : 'Chi tiết danh mục',
+        onEditToggle: () {
+          setState(() {
+            isEditMode = !isEditMode;
+          });
+        },
+        isEditMode: isEditMode,
+      ),
+      body: Form(
+        key: _formKey,
+        child: Stack(
+          children: [
+            ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
                 // Hiển thị hình ảnh với tỉ lệ đúng
-                if (_selectedImageUrl != null && _selectedImageUrl!.isNotEmpty)
+                if (_selectedImageUrl != null &&
+                        _selectedImageUrl!.isNotEmpty ||
+                    _isImageChanged)
                   _buildImagePreview(),
 
                 const SizedBox(height: 24),
@@ -152,13 +169,21 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                   CustomButton(
                     text: 'Cập nhật',
                     onPressed: _handleSubmit,
+                    isLoading: widget.viewModel.isSubmitting,
                   ),
                 ],
               ],
             ),
-          ),
-        );
-      },
+            if (widget.viewModel.isSubmitting)
+              Container(
+                color: Colors.black.withOpacity(0.3),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -173,7 +198,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       ),
       child: _isImageChanged && _selectedImageFile != null
           ? Image.file(
-              _selectedImageFile as File,
+              _selectedImageFile!,
               fit: BoxFit.contain,
             )
           : _selectedImageUrl != null && _selectedImageUrl!.isNotEmpty
@@ -283,89 +308,34 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
           _isImageChanged = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã chọn hình ảnh mới'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        widget.viewModel.showSuccessMessage(context, 'Đã chọn hình ảnh mới');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi khi chọn hình ảnh: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      widget.viewModel.showErrorMessage(context, 'Lỗi khi chọn hình ảnh: $e');
     }
   }
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Lấy thông tin danh mục hiện tại
-      final category =
-          Provider.of<CategoryDetailViewModel>(context, listen: false).category;
-      if (category == null) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không tìm thấy thông tin danh mục'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Tạo đối tượng ReqCategory để cập nhật
-      final reqCategory = ReqCategory(
-        id: category.id,
-        name: _nameController.text,
-        // Giữ nguyên đường dẫn hình ảnh nếu không có hình ảnh mới
-        imageUrl: _isImageChanged
-            ? (_selectedImageFile as File).path
-            : category.imageUrl, // Giữ nguyên đường dẫn hình ảnh cũ
-      );
-
-      // Gọi phương thức updateCategory từ ViewModel
-      Provider.of<CategoryDetailViewModel>(context, listen: false)
+      widget.viewModel
           .updateCategory(
-              reqCategory, _isImageChanged ? _selectedImageFile as File : null)
+        _nameController.text,
+        imageFile: _isImageChanged ? _selectedImageFile : null,
+        currentImageUrl: !_isImageChanged ? _selectedImageUrl : null,
+      )
           .then((success) {
-        setState(() {
-          _isLoading = false;
-          if (success) {
-            // Chuyển về chế độ xem thay vì quay lại màn hình trước
+        if (success) {
+          // Chuyển về chế độ xem thay vì quay lại màn hình trước
+          setState(() {
             isEditMode = false;
             _isImageChanged = false;
-            _selectedImageFile = null;
+          });
 
-            // Tải lại dữ liệu danh mục để hiển thị thông tin mới nhất
-            _loadCategoryData();
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cập nhật thành công'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    Provider.of<CategoryDetailViewModel>(context, listen: false)
-                            .errorMessage ??
-                        'Cập nhật thất bại'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        });
+          widget.viewModel.showSuccessMessage(context, 'Cập nhật thành công');
+        } else {
+          widget.viewModel.showErrorMessage(
+              context, widget.viewModel.errorMessage ?? 'Cập nhật thất bại');
+        }
       });
     }
   }

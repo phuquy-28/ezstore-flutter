@@ -1,181 +1,99 @@
 import 'dart:async';
 import 'package:ezstore_flutter/config/constants.dart';
-import 'package:ezstore_flutter/routing/app_routes.dart';
+import 'package:ezstore_flutter/domain/models/product/product_response.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
 import 'package:ezstore_flutter/ui/core/shared/search_field.dart';
 import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
 import 'package:ezstore_flutter/ui/product/view_models/product_screen_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'product_card.dart';
 
 class ProductScreen extends StatefulWidget {
-  const ProductScreen({super.key});
+  final ProductScreenViewModel viewModel;
+
+  const ProductScreen({
+    Key? key,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  bool _isInitialized = false;
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Chỉ gọi loadData một lần sau khi widget được khởi tạo
-    if (!_isInitialized) {
-      _isInitialized = true;
-      // Sử dụng Future.microtask để đảm bảo gọi sau khi build hoàn tất
-      Future.microtask(() {
-        Provider.of<ProductScreenViewModel>(context, listen: false)
-            .loadFirstPage();
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_viewModelListener);
+
+    // Theo dõi sự kiện cuộn
+    _scrollController.addListener(_handleScroll);
+
+    // Khởi tạo dữ liệu
+    Future.microtask(() {
+      widget.viewModel.initData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        _isLoading = widget.viewModel.isLoading;
       });
+    }
+  }
+
+  void _handleScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      widget.viewModel.handleScrollToEnd();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use Consumer for more targeted rebuilds
     return Scaffold(
       appBar: CustomAppBar(
         title: AppStrings.products,
         additionalActions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.addProduct);
-            },
+            onPressed: () => widget.viewModel.navigateToAddProduct(context),
           ),
         ],
       ),
       drawer: const CustomDrawer(),
-      body: Consumer<ProductScreenViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.isLoading && viewModel.items == null) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (viewModel.error != null) {
-            return _buildErrorView(viewModel.error!);
-          } else {
-            return _buildProductList(viewModel);
-          }
-        },
-      ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildProductList(ProductScreenViewModel viewModel) {
-    return PaginatedListView(
-      items: viewModel.getFilteredProducts(),
-      isLoading: viewModel.isLoading,
-      hasMoreData: viewModel.hasMorePages,
-      onLoadMore: () => viewModel.loadNextPage(),
-      onRefresh: () => viewModel.refresh(),
-      padding: EdgeInsets.zero,
-      separatorHeight: AppSizes.paddingSmall,
-      showEmptyWidget: false,
-      headerBuilder: (context) => _buildHeader(viewModel),
-      itemBuilder: (context, product, index) {
-        return Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: AppSizes.paddingNormal),
-          child: RepaintBoundary(
-            child: ProductCard(
-              product: product,
-              onDelete: (productId) async {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                final success = await viewModel.deleteProduct(productId);
-                if (mounted) {
-                  if (success) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Xóa sản phẩm thành công'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Không thể xóa sản phẩm. Vui lòng thử lại sau.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-          ),
-        );
-      },
-      endOfListWidget: Text(
-        viewModel.searchKeyword != null
-            ? "Đã hiển thị tất cả ${viewModel.totalProducts} kết quả cho '${viewModel.searchKeyword}'"
-            : "Đã hiển thị tất cả ${viewModel.totalProducts} sản phẩm",
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontStyle: FontStyle.italic,
-        ),
-      ),
-    );
+  Widget _buildBody() {
+    // Hiển thị loading khi đang tải dữ liệu ban đầu
+    if (_isLoading && widget.viewModel.items == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Hiển thị lỗi nếu có
+    if (widget.viewModel.error != null) {
+      return _buildErrorView();
+    }
+
+    // Hiển thị danh sách sản phẩm
+    return _buildProductList();
   }
 
-  Widget _buildHeader(ProductScreenViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SearchField(
-          hintText: "Tìm kiếm theo tên sản phẩm",
-          initialValue: viewModel.searchKeyword,
-          onChanged: (value) {
-            // Không làm gì khi thay đổi, chỉ cập nhật UI
-          },
-          onSubmitted: (value) {
-            // Gọi tìm kiếm khi người dùng nhấn Enter
-            viewModel.searchProducts(value);
-          },
-          onClear: () {
-            // Xóa tìm kiếm và tải lại dữ liệu ban đầu
-            viewModel.clearSearch();
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppSizes.paddingNormal,
-            right: AppSizes.paddingNormal,
-            bottom: AppSizes.paddingSmall,
-          ),
-          child: Row(
-            children: [
-              Text(
-                viewModel.searchKeyword != null
-                    ? "Kết quả tìm kiếm: ${viewModel.totalProducts} sản phẩm"
-                    : "Tổng số: ${viewModel.totalProducts} sản phẩm",
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-              if (viewModel.searchKeyword != null) ...[
-                const SizedBox(width: 8),
-                Text(
-                  "cho '${viewModel.searchKeyword}'",
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildErrorView(String errorMessage) {
+  Widget _buildErrorView() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -198,7 +116,7 @@ class _ProductScreenState extends State<ProductScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Text(
-              errorMessage,
+              widget.viewModel.error!,
               style: TextStyle(
                 color: Colors.grey[600],
               ),
@@ -207,13 +125,113 @@ class _ProductScreenState extends State<ProductScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () {
-              Provider.of<ProductScreenViewModel>(context, listen: false)
-                  .refresh();
-            },
+            onPressed: widget.viewModel.handleRetry,
             child: const Text("Thử lại"),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProductList() {
+    return PaginatedListView<ProductResponse>(
+      items: widget.viewModel.getFilteredProducts(),
+      isLoading: _isLoading,
+      hasMoreData: widget.viewModel.hasMorePages,
+      onLoadMore: widget.viewModel.loadNextPage,
+      onRefresh: widget.viewModel.handleRefresh,
+      padding: EdgeInsets.zero,
+      separatorHeight: AppSizes.paddingSmall,
+      showEmptyWidget: false,
+      headerBuilder: (context) => _buildHeader(),
+      itemBuilder: (context, product, index) => _buildProductItem(product),
+      endOfListWidget: _buildEndOfList(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SearchField(
+          hintText: "Tìm kiếm theo tên sản phẩm",
+          initialValue: widget.viewModel.searchKeyword,
+          onChanged: (value) {
+            // Không làm gì khi thay đổi, chỉ cập nhật UI
+          },
+          onSubmitted: widget.viewModel.handleSearchSubmitted,
+          onClear: widget.viewModel.handleClearSearch,
+        ),
+        _buildSearchResult(),
+      ],
+    );
+  }
+
+  Widget _buildSearchResult() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSizes.paddingNormal,
+        right: AppSizes.paddingNormal,
+        bottom: AppSizes.paddingSmall,
+      ),
+      child: Row(
+        children: [
+          Text(
+            widget.viewModel.searchKeyword != null
+                ? "Kết quả tìm kiếm: ${widget.viewModel.totalProducts} sản phẩm"
+                : "Tổng số: ${widget.viewModel.totalProducts} sản phẩm",
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          if (widget.viewModel.searchKeyword != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              "cho '${widget.viewModel.searchKeyword}'",
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductItem(ProductResponse product) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingNormal),
+      child: RepaintBoundary(
+        child: ProductCard(
+          product: product,
+          onDelete: _handleDeleteProduct,
+          onViewDetails: (productId) =>
+              widget.viewModel.navigateToProductDetail(context, productId),
+          onEditSuccess: widget.viewModel.handleRefresh,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteProduct(int productId) async {
+    final success = await widget.viewModel.deleteProduct(productId);
+    if (mounted) {
+      widget.viewModel.showDeleteResult(context, success);
+    }
+  }
+
+  Widget _buildEndOfList() {
+    return Text(
+      widget.viewModel.searchKeyword != null
+          ? "Đã hiển thị tất cả ${widget.viewModel.totalProducts} kết quả cho '${widget.viewModel.searchKeyword}'"
+          : "Đã hiển thị tất cả ${widget.viewModel.totalProducts} sản phẩm",
+      style: TextStyle(
+        color: Colors.grey[600],
+        fontStyle: FontStyle.italic,
       ),
     );
   }

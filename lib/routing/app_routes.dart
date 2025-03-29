@@ -1,6 +1,8 @@
 import 'package:ezstore_flutter/data/repositories/auth_repository.dart';
 import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
 import 'package:ezstore_flutter/data/repositories/user_repository.dart';
+import 'package:ezstore_flutter/data/repositories/product_repository.dart';
+import 'package:ezstore_flutter/data/repositories/category_repository.dart';
 import 'package:ezstore_flutter/ui/auth/login/view_model/login_viewmodel.dart';
 import 'package:ezstore_flutter/ui/auth/login/widgets/login_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
@@ -22,6 +24,13 @@ import 'package:ezstore_flutter/ui/user/view_models/user_screen_view_model.dart'
 import 'package:ezstore_flutter/ui/user/widgets/add_user_screen.dart';
 import 'package:ezstore_flutter/ui/user/widgets/user_detail_screen.dart';
 import 'package:ezstore_flutter/ui/user/widgets/user_screen.dart';
+import 'package:ezstore_flutter/ui/product/view_models/product_screen_view_model.dart';
+import 'package:ezstore_flutter/ui/product/view_models/add_product_view_model.dart';
+import 'package:ezstore_flutter/ui/product/view_models/product_detail_view_model.dart';
+import 'package:ezstore_flutter/ui/product/view_models/edit_product_view_model.dart';
+import 'package:ezstore_flutter/ui/category/view_models/category_screen_view_model.dart';
+import 'package:ezstore_flutter/ui/category/view_models/category_detail_view_model.dart';
+import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,19 +86,65 @@ class AppRoutes {
 
       // Product case
       case products:
-        return _createRoute(const ProductScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final productRepository =
+                Provider.of<ProductRepository>(context, listen: false);
+            final productScreenViewModel =
+                ProductScreenViewModel(productRepository);
+            return ProductScreen(viewModel: productScreenViewModel);
+          },
+          settings: settings,
+        );
       case productDetail:
         final productId = args?['id'];
-        return _createRoute(ProductDetailScreen(
-          productId: productId,
-        ));
+        return MaterialPageRoute(
+          builder: (context) {
+            final productRepository =
+                Provider.of<ProductRepository>(context, listen: false);
+            final productDetailViewModel =
+                ProductDetailViewModel(productRepository);
+            return ProductDetailScreen(
+              viewModel: productDetailViewModel,
+              productId: productId,
+            );
+          },
+          settings: settings,
+        );
       case editProduct:
         final productId = args?['id'];
-        return _createRoute(EditProductScreen(
-          productId: productId,
-        ));
+        return MaterialPageRoute(
+          builder: (context) {
+            final productRepository =
+                Provider.of<ProductRepository>(context, listen: false);
+            final categoryRepository =
+                Provider.of<CategoryRepository>(context, listen: false);
+            final editProductViewModel = EditProductViewModel(
+              productRepository,
+              categoryRepository,
+            );
+            return EditProductScreen(
+              viewModel: editProductViewModel,
+              productId: productId,
+            );
+          },
+          settings: settings,
+        );
       case addProduct:
-        return _createRoute(const AddProductScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final productRepository =
+                Provider.of<ProductRepository>(context, listen: false);
+            final categoryRepository =
+                Provider.of<CategoryRepository>(context, listen: false);
+            final addProductViewModel = AddProductViewModel(
+              productRepository,
+              categoryRepository,
+            );
+            return AddProductScreen(viewModel: addProductViewModel);
+          },
+          settings: settings,
+        );
 
       // Review case
       case reviews:
@@ -101,15 +156,43 @@ class AppRoutes {
 
       // Category case
       case categories:
-        return _createRoute(const CategoryScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final categoryRepository =
+                Provider.of<CategoryRepository>(context, listen: false);
+            final categoryScreenViewModel =
+                CategoryScreenViewModel(categoryRepository);
+            return CategoryScreen(viewModel: categoryScreenViewModel);
+          },
+          settings: settings,
+        );
       case categoryDetail:
         final categoryId = args?['id'];
-        return _createRoute(CategoryDetailScreen(
-          isEditMode: false,
-          categoryId: categoryId,
-        ));
+        return MaterialPageRoute(
+          builder: (context) {
+            final categoryRepository =
+                Provider.of<CategoryRepository>(context, listen: false);
+            final categoryDetailViewModel =
+                CategoryDetailViewModel(categoryRepository);
+            return CategoryDetailScreen(
+              viewModel: categoryDetailViewModel,
+              isEditMode: false,
+              categoryId: categoryId,
+            );
+          },
+          settings: settings,
+        );
       case addCategory:
-        return _createRoute(const AddCategoryScreen());
+        return MaterialPageRoute(
+          builder: (context) {
+            final categoryRepository =
+                Provider.of<CategoryRepository>(context, listen: false);
+            final addCategoryViewModel =
+                AddCategoryViewModel(categoryRepository);
+            return AddCategoryScreen(viewModel: addCategoryViewModel);
+          },
+          settings: settings,
+        );
 
       // User case
       case users:

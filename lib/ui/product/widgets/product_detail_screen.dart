@@ -3,16 +3,16 @@ import 'package:ezstore_flutter/ui/core/shared/detail_app_bar.dart';
 import 'package:ezstore_flutter/ui/product/view_models/product_detail_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:ezstore_flutter/ui/product/widgets/edit_product_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  final int productId;
+  final int? productId;
+  final ProductDetailViewModel viewModel;
 
   const ProductDetailScreen({
     Key? key,
-    required this.productId,
+    this.productId,
+    required this.viewModel,
   }) : super(key: key);
 
   @override
@@ -21,287 +21,293 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final _scrollController = ScrollController();
-  // Map to group variants by color
-  final Map<String, List<dynamic>> _groupedVariants = {};
 
   @override
   void initState() {
     super.initState();
+    widget.viewModel.addListener(_viewModelListener);
 
     // Tải thông tin sản phẩm khi màn hình được tạo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final viewModel =
-            Provider.of<ProductDetailViewModel>(context, listen: false);
-        viewModel.getProductById(widget.productId);
-      }
-    });
+    if (widget.productId != null) {
+      Future.microtask(() => _loadProductData());
+    }
   }
 
-  // Group variants by color
-  void _groupVariantsByColor(List<dynamic>? variants) {
-    if (variants == null || variants.isEmpty) return;
+  @override
+  void dispose() {
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
 
-    _groupedVariants.clear();
-    for (var variant in variants) {
-      final color = variant.color ?? '';
-      if (!_groupedVariants.containsKey(color)) {
-        _groupedVariants[color] = [];
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        // Update UI when viewModel changes
+      });
+    }
+  }
+
+  Future<void> _loadProductData() async {
+    try {
+      await widget.viewModel.getProductById(widget.productId!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-      _groupedVariants[color]!.add(variant);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProductDetailViewModel>(
-      builder: (context, viewModel, child) {
-        // Hiển thị loading khi đang tải dữ liệu
-        if (viewModel.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    // Hiển thị loading khi đang tải dữ liệu
+    if (widget.viewModel.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        // Hiển thị thông báo lỗi nếu có
-        if (viewModel.errorMessage != null) {
-          return Scaffold(
-            appBar: DetailAppBar(
-              title: 'Chi tiết sản phẩm',
-              isEditMode: false,
-              onEditToggle: () {},
-              showEditButton: false,
-            ),
-            body: _buildErrorView(viewModel.errorMessage!),
-          );
-        }
+    // Hiển thị thông báo lỗi nếu có
+    if (widget.viewModel.errorMessage != null) {
+      return Scaffold(
+        appBar: DetailAppBar(
+          title: 'Chi tiết sản phẩm',
+          isEditMode: false,
+          onEditToggle: () {},
+          showEditButton: false,
+        ),
+        body: _buildErrorView(),
+      );
+    }
 
-        // Kiểm tra sản phẩm có tồn tại không
-        final product = viewModel.product;
-        if (product == null) {
-          return const Scaffold(
-            body: Center(child: Text('Không tìm thấy sản phẩm')),
-          );
-        }
+    // Kiểm tra sản phẩm có tồn tại không
+    final product = widget.viewModel.product;
+    if (product == null) {
+      return const Scaffold(
+        body: Center(child: Text('Không tìm thấy sản phẩm')),
+      );
+    }
 
-        // Group variants by color for display
-        _groupVariantsByColor(product.variants);
-
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: DetailAppBar(
-            title: 'Chi tiết sản phẩm',
-            onEditToggle: () => _navigateToEditScreen(context, product.id ?? 0),
-            isEditMode: false, // Luôn ở chế độ xem
-            showEditButton: true,
-          ),
-          body: ListView(
-            controller: _scrollController,
-              padding: const EdgeInsets.all(16.0),
-              children: [
-              // 1. Tên sản phẩm
-              Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                    'Tên sản phẩm',
-                          style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.name ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ],
-                  ),
-
-                const SizedBox(height: 16),
-
-              // 2. Mô tả sản phẩm
-              Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                    'Mô tả sản phẩm',
-                          style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.description ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ],
-                  ),
-
-                const SizedBox(height: 16),
-
-              // 3. Giá sản phẩm
-              Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                    'Giá sản phẩm',
-                          style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${product.price}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                        color: Colors.black,
-                        ),
-                    ),
-                  ),
-                ],
-                  ),
-
-                const SizedBox(height: 16),
-
-              // 4. Danh mục
-              Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                    'Danh mục',
-                          style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.categoryName ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 5. Nổi bật toggle
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Nổi bật',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                      product.featured == true ? 'Có' : 'Không',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-              // 6. Hình ảnh sản phẩm
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Hình ảnh sản phẩm',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildProductImagesGallery(product.images),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // 7. Biến thể sản phẩm
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: DetailAppBar(
+        title: 'Chi tiết sản phẩm',
+        onEditToggle: () =>
+            widget.viewModel.navigateToEditScreen(context, product.id ?? 0),
+        isEditMode: false, // Luôn ở chế độ xem
+        showEditButton: true,
+      ),
+      body: ListView(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          // 1. Tên sản phẩm
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               const Text(
-                'Biến thể sản phẩm',
+                'Tên sản phẩm',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // Hiển thị danh sách biến thể theo màu sắc
-              if (_groupedVariants.isNotEmpty)
-                ...List.generate(_groupedVariants.keys.length, (index) {
-                  final color = _groupedVariants.keys.elementAt(index);
-                  final colorVariants = _groupedVariants[color]!;
-                  return _buildVariantColorGroup(color, colorVariants);
-                })
-              else
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text('Không có biến thể nào'),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  product.name ?? '',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
                   ),
                 ),
+              ),
             ],
           ),
-        );
-      },
+
+          const SizedBox(height: 16),
+
+          // 2. Mô tả sản phẩm
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Mô tả sản phẩm',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  product.description ?? '',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // 3. Giá sản phẩm
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Giá sản phẩm',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${product.price}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4. Danh mục
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Danh mục',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  product.categoryName ?? '',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // 5. Nổi bật toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Nổi bật',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  product.featured == true ? 'Có' : 'Không',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 6. Hình ảnh sản phẩm
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Hình ảnh sản phẩm',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildProductImagesGallery(product.images),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // 7. Biến thể sản phẩm
+          const Text(
+            'Biến thể sản phẩm',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Hiển thị danh sách biến thể theo màu sắc
+          if (widget.viewModel.groupedVariants.isNotEmpty)
+            ...List.generate(widget.viewModel.groupedVariants.keys.length,
+                (index) {
+              final color =
+                  widget.viewModel.groupedVariants.keys.elementAt(index);
+              final colorVariants = widget.viewModel.groupedVariants[color]!;
+              return _buildVariantColorGroup(color, colorVariants);
+            })
+          else
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Text('Không có biến thể nào'),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -482,9 +488,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     borderRadius: BorderRadius.circular(6),
                     child: CachedNetworkImage(
                       imageUrl: images[index],
-              fit: BoxFit.contain,
+                      fit: BoxFit.contain,
                       placeholder: (context, url) => Center(
-                      child: CircularProgressIndicator(
+                        child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
@@ -511,9 +517,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                 ),
-                      ),
-                    );
-                  },
+              ),
+            );
+          },
         ),
       ),
     );
@@ -559,21 +565,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Icon(Icons.image_not_supported,
                   size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text(
+              const SizedBox(height: 8),
+              Text(
                 'Không có hình ảnh',
                 style: TextStyle(color: Colors.grey[500]),
+              ),
+            ],
           ),
-        ],
-          ),
-      ),
-    );
-  }
+        ),
+      );
+    }
 
     // Calculate the optimal grid layout based on number of images
     int crossAxisCount = 1;
@@ -645,13 +651,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           errorWidget: (context, url, error) => Container(
                             color: Colors.grey[200],
                             child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
                                   Icon(Icons.error_outline,
                                       color: Colors.red[300], size: 36),
-          const SizedBox(height: 8),
-          Text(
+                                  const SizedBox(height: 8),
+                                  Text(
                                     'Không thể tải hình ảnh',
                                     style: TextStyle(
                                         color: Colors.red[300], fontSize: 12),
@@ -748,7 +754,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildErrorView(String errorMessage) {
+  Widget _buildErrorView() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -771,7 +777,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Text(
-              errorMessage,
+              widget.viewModel.errorMessage ??
+                  "Không thể tải thông tin sản phẩm",
               style: TextStyle(
                 color: Colors.grey[600],
               ),
@@ -780,33 +787,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () {
-              final viewModel =
-                  Provider.of<ProductDetailViewModel>(context, listen: false);
-              viewModel.getProductById(widget.productId);
-            },
+            onPressed: _loadProductData,
             child: const Text("Thử lại"),
           ),
         ],
       ),
     );
-  }
-
-  // Phương thức chuyển đến màn hình chỉnh sửa sản phẩm
-  void _navigateToEditScreen(BuildContext context, int productId) async {
-    // Sử dụng MaterialPageRoute trực tiếp thay vì pushNamed để tránh vấn đề với routing
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditProductScreen(productId: productId),
-      ),
-    );
-
-    // Nếu có thay đổi và quay lại, refresh lại dữ liệu sản phẩm
-    if (result == true && mounted) {
-      final viewModel =
-          Provider.of<ProductDetailViewModel>(context, listen: false);
-      viewModel.getProductById(productId);
-    }
   }
 }

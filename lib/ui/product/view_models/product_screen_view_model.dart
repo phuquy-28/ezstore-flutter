@@ -1,7 +1,9 @@
 import 'package:ezstore_flutter/domain/models/product/product_response.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/ui/core/view_models/paginated_view_model_mixin.dart';
+import 'package:ezstore_flutter/routing/app_routes.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'dart:developer' as dev;
 
 class ProductScreenViewModel extends ChangeNotifier
@@ -10,9 +12,11 @@ class ProductScreenViewModel extends ChangeNotifier
   String? _searchKeyword;
   String? _lastAppliedSearchKeyword;
   bool _isSearching = false;
+  String? _deleteErrorMessage;
   Map<String, List<ProductResponse>> _cachedProducts = {};
   final int _cacheTimeInMinutes = 5;
   DateTime? _lastLoadTime;
+  final TextEditingController searchController = TextEditingController();
 
   ProductScreenViewModel(this._productRepository) {
     setPageSize(10); // Thiết lập kích thước trang
@@ -23,6 +27,19 @@ class ProductScreenViewModel extends ChangeNotifier
   String? get error => errorMessage;
   bool get hasMorePages => hasMoreData;
   bool get isSearching => _isSearching;
+  String? get deleteErrorMessage => _deleteErrorMessage;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void initData() {
+    if (items == null) {
+      loadFirstPage();
+    }
+  }
 
   // Cache key generation
   String _getCacheKey(int page, String? keyword) {
@@ -104,6 +121,7 @@ class ProductScreenViewModel extends ChangeNotifier
     }
 
     _searchKeyword = keyword.isNotEmpty ? keyword : null;
+    searchController.text = keyword;
     await refresh();
   }
 
@@ -112,6 +130,7 @@ class ProductScreenViewModel extends ChangeNotifier
     if (_searchKeyword != null) {
       _searchKeyword = null;
       _lastAppliedSearchKeyword = null;
+      searchController.clear();
       _cachedProducts.clear();
       refresh();
     }
@@ -139,8 +158,52 @@ class ProductScreenViewModel extends ChangeNotifier
     super.refresh();
   }
 
+  // Phương thức xử lý khi người dùng submit tìm kiếm
+  void handleSearchSubmitted(String value) {
+    searchProducts(value);
+  }
+
+  // Phương thức xử lý khi người dùng xóa tìm kiếm
+  void handleClearSearch() {
+    clearSearch();
+  }
+
+  // Phương thức xử lý khi scroll đến cuối
+  void handleScrollToEnd() {
+    if (!isLoading && hasMoreData) {
+      loadMoreData();
+    }
+  }
+
+  // Phương thức xử lý khi nhấn nút thử lại
+  void handleRetry() {
+    _cachedProducts.clear();
+    _lastLoadTime = null;
+    loadFirstPage();
+  }
+
+  // Phương thức xử lý khi cần refresh dữ liệu
+  Future<void> handleRefresh() async {
+    await refresh();
+  }
+
+  // Phương thức chuyển đến màn hình thêm sản phẩm
+  void navigateToAddProduct(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.addProduct);
+  }
+
+  // Phương thức chuyển đến màn hình chi tiết sản phẩm
+  void navigateToProductDetail(BuildContext context, int productId) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.productDetail,
+      arguments: {'id': productId},
+    );
+  }
+
   Future<bool> deleteProduct(int productId) async {
     bool isCurrentlyLoading = isLoading;
+    _deleteErrorMessage = null;
 
     try {
       // Đánh dấu đang tải
@@ -169,10 +232,38 @@ class ProductScreenViewModel extends ChangeNotifier
       return true;
     } catch (e) {
       dev.log('Lỗi khi xóa sản phẩm: $e');
+
+      // Trích xuất thông báo lỗi từ Exception
+      if (e is Exception) {
+        _deleteErrorMessage = e.toString().replaceAll('Exception: ', '');
+      } else {
+        _deleteErrorMessage = e.toString();
+      }
+
       if (!isCurrentlyLoading) {
         notifyListeners();
       }
       return false;
+    }
+  }
+
+  // Hiển thị thông báo kết quả xóa sản phẩm
+  void showDeleteResult(BuildContext context, bool success) {
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Xóa sản phẩm thành công'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(deleteErrorMessage ??
+              'Không thể xóa sản phẩm. Vui lòng thử lại sau.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:ezstore_flutter/domain/models/product/product_response.dart'
     hide Variants;
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'dart:io';
 
 class ProductDetailViewModel extends ChangeNotifier {
@@ -20,6 +21,9 @@ class ProductDetailViewModel extends ChangeNotifier {
   List<File> _newProductImages = [];
   bool _imagesChanged = false;
 
+  // Map to group variants by color
+  final Map<String, List<dynamic>> _groupedVariants = {};
+
   ProductDetailViewModel(this._productRepository);
 
   ProductResponse? get product => _product;
@@ -27,6 +31,7 @@ class ProductDetailViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasChanges => _hasChanges;
   bool get imagesChanged => _imagesChanged;
+  Map<String, List<dynamic>> get groupedVariants => _groupedVariants;
 
   // Getter cho các biến thể
   List<dynamic>? get originalVariants => _originalVariants;
@@ -34,8 +39,27 @@ class ProductDetailViewModel extends ChangeNotifier {
   Map<String, File?> get newVariantImages => _newVariantImages;
   List<File> get newProductImages => _newProductImages;
 
+  // Group variants by color for display
+  void groupVariantsByColor() {
+    final variants = _product?.variants;
+    if (variants == null || variants.isEmpty) return;
+
+    _groupedVariants.clear();
+    for (var variant in variants) {
+      final color = variant.color ?? '';
+      if (!_groupedVariants.containsKey(color)) {
+        _groupedVariants[color] = [];
+      }
+      _groupedVariants[color]!.add(variant);
+    }
+    notifyListeners();
+  }
+
   Future<void> getProductById(int productId) async {
-    _setLoading(true);
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
     try {
       final product = await _productRepository.getProductById(productId);
       if (product != null) {
@@ -46,6 +70,7 @@ class ProductDetailViewModel extends ChangeNotifier {
         _newVariantImages.clear();
         _newProductImages.clear();
         _updatedVariants.clear();
+        groupVariantsByColor();
 
         // Copy variants to updatedVariants
         if (_originalVariants != null) {
@@ -61,11 +86,12 @@ class ProductDetailViewModel extends ChangeNotifier {
           }
         }
       }
-      _setErrorMessage(null);
+      _errorMessage = null;
     } catch (e) {
-      _setErrorMessage('Không thể tải thông tin sản phẩm: $e');
+      _errorMessage = 'Không thể tải thông tin sản phẩm: $e';
     } finally {
-      _setLoading(false);
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -162,10 +188,20 @@ class ProductDetailViewModel extends ChangeNotifier {
     }
   }
 
+  void navigateToEditScreen(BuildContext context, int productId) {
+    Navigator.pushNamed(
+      context,
+      '/editProduct',
+      arguments: {'id': productId},
+    );
+  }
+
   Future<bool> updateProduct() async {
     if (_product == null) return false;
 
-    _setLoading(true);
+    _isLoading = true;
+    notifyListeners();
+
     try {
       // Chuyển đổi các biến thể đã cập nhật sang định dạng Variants
       final List<Variants> updatedVariantsList = [];
@@ -212,6 +248,7 @@ class ProductDetailViewModel extends ChangeNotifier {
         _imagesChanged = false;
         _newVariantImages.clear();
         _newProductImages.clear();
+        groupVariantsByColor();
 
         // Reset updatedVariants
         _updatedVariants.clear();
@@ -228,27 +265,21 @@ class ProductDetailViewModel extends ChangeNotifier {
           }
         }
 
-        _setErrorMessage(null);
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
         return true;
       } else {
-        _setErrorMessage('Không thể cập nhật sản phẩm');
+        _errorMessage = 'Không thể cập nhật sản phẩm';
+        _isLoading = false;
+        notifyListeners();
         return false;
       }
     } catch (e) {
-      _setErrorMessage('Không thể cập nhật sản phẩm: $e');
+      _errorMessage = 'Không thể cập nhật sản phẩm: $e';
+      _isLoading = false;
+      notifyListeners();
       return false;
-    } finally {
-      _setLoading(false);
     }
-  }
-
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
-  void _setErrorMessage(String? message) {
-    _errorMessage = message;
-    notifyListeners();
   }
 }
