@@ -1,7 +1,6 @@
 import 'package:ezstore_flutter/config/constants.dart';
 import 'package:ezstore_flutter/provider/user_info_provider.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
-import 'package:ezstore_flutter/ui/core/shared/orders_table.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -384,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        OrdersTable(orders: OrdersTable.getMockOrders()),
+        // OrdersTable(orders: OrdersTable.getMockOrders()),
       ],
     );
   }

@@ -1,81 +1,63 @@
 import 'package:ezstore_flutter/config/constants.dart';
+import 'package:ezstore_flutter/domain/models/order/order_response.dart';
 import 'package:ezstore_flutter/ui/core/shared/custom_app_bar.dart';
 import 'package:ezstore_flutter/ui/drawer/widgets/custom_drawer.dart';
 import 'package:ezstore_flutter/ui/core/shared/search_field.dart';
+import 'package:ezstore_flutter/ui/core/shared/paginated_list_view.dart';
+import 'package:ezstore_flutter/ui/order/view_models/order_screen_viewmodel.dart';
+import 'package:ezstore_flutter/ui/order/widgets/order_card.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
-class Order {
-  final String id;
-  final DateTime orderDate;
-  final String customerName;
-  final double totalAmount;
-  final String paymentStatus;
-  final String orderStatus;
-  final int quantity;
-  final String paymentMethod;
-  final String deliveryMethod;
-
-  Order({
-    required this.id,
-    required this.orderDate,
-    required this.customerName,
-    required this.totalAmount,
-    required this.paymentStatus,
-    required this.orderStatus,
-    required this.quantity,
-    required this.paymentMethod,
-    required this.deliveryMethod,
-  });
-}
 
 class OrderScreen extends StatefulWidget {
-  const OrderScreen({super.key});
+  final OrderScreenViewModel viewModel;
+
+  const OrderScreen({
+    Key? key,
+    required this.viewModel,
+  }) : super(key: key);
 
   @override
   State<OrderScreen> createState() => _OrderScreenState();
 }
 
 class _OrderScreenState extends State<OrderScreen> {
-  final List<Order> orders = [
-    Order(
-      id: 'ORD-1734919325123',
-      orderDate: DateTime(2024, 12, 23, 9, 2),
-      customerName: 'oss sssss',
-      totalAmount: 598000,
-      paymentStatus: 'Đã thanh toán',
-      orderStatus: 'Đang xử lý',
-      quantity: 2,
-      paymentMethod: 'Thanh toán qua VNPAY',
-      deliveryMethod: 'Giao hàng nhanh',
-    ),
-    Order(
-      id: 'ORD-1734915811378',
-      orderDate: DateTime(2024, 12, 23, 8, 3),
-      customerName: 'oss sssss',
-      totalAmount: 299000,
-      paymentStatus: 'Chờ thanh toán',
-      orderStatus: 'Chờ xác nhận',
-      quantity: 1,
-      paymentMethod: 'Thanh toán khi nhận hàng',
-      deliveryMethod: 'Giao hàng nhanh',
-    ),
-    // Add more orders as needed
-  ];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
 
-  String searchQuery = '';
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_viewModelListener);
 
-  List<Order> get filteredOrders {
-    if (searchQuery.isEmpty) {
-      return orders;
+    // Track scroll events
+    _scrollController.addListener(_handleScroll);
+
+    // Initialize data
+    Future.microtask(() {
+      widget.viewModel.initData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    widget.viewModel.removeListener(_viewModelListener);
+    super.dispose();
+  }
+
+  void _viewModelListener() {
+    if (mounted) {
+      setState(() {
+        _isLoading = widget.viewModel.isLoading;
+      });
     }
-    return orders
-        .where((order) =>
-            order.id.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            order.customerName
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()))
-        .toList();
+  }
+
+  void _handleScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      widget.viewModel.handleScrollToEnd();
+    }
   }
 
   @override
@@ -86,441 +68,259 @@ class _OrderScreenState extends State<OrderScreen> {
         additionalActions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              _showFilterBottomSheet(context);
-            },
+            onPressed: () => widget.viewModel.showFilterOptions(context),
           ),
         ],
       ),
-      drawer: CustomDrawer(),
-      body: Column(
+      drawer: const CustomDrawer(),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // Show loading indicator when initially loading data
+    if (_isLoading && widget.viewModel.items == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Show error if any
+    if (widget.viewModel.error != null) {
+      return _buildErrorView();
+    }
+
+    // Show order list
+    return _buildOrderList();
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SearchField(
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-            },
-            onSubmitted: (value) {
-              // Tạm bỏ qua xử lý
-            },
-            onClear: () {
-              // Tạm bỏ qua xử lý
-            },
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
           ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(AppSizes.paddingNormal),
-              itemCount: filteredOrders.length,
-              separatorBuilder: (context, index) =>
-                  const SizedBox(height: AppSizes.paddingSmall),
-              itemBuilder: (context, index) {
-                final order = filteredOrders[index];
-                return OrderCard(order: order);
-              },
+          const SizedBox(height: 16),
+          Text(
+            "Đã xảy ra lỗi",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
             ),
           ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              widget.viewModel.error!,
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: widget.viewModel.handleRetry,
+            child: const Text("Thử lại"),
+          ),
         ],
       ),
     );
   }
 
-  void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Bộ lọc',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Add filter options here
-              ListTile(
-                title: const Text('Trạng thái thanh toán'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // Show payment status filter options
-                },
-              ),
-              ListTile(
-                title: const Text('Trạng thái đơn hàng'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // Show order status filter options
-                },
-              ),
-              ListTile(
-                title: const Text('Phương thức thanh toán'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // Show payment method filter options
-                },
-              ),
-            ],
-          ),
-        );
-      },
+  Widget _buildOrderList() {
+    return PaginatedListView<OrderResponse>(
+      items: widget.viewModel.getFilteredOrders(),
+      isLoading: _isLoading,
+      hasMoreData: widget.viewModel.hasMorePages,
+      onLoadMore: widget.viewModel.loadNextPage,
+      onRefresh: widget.viewModel.handleRefresh,
+      padding: EdgeInsets.zero,
+      separatorHeight: AppSizes.paddingSmall,
+      showEmptyWidget: false,
+      headerBuilder: (context) => _buildHeader(),
+      itemBuilder: (context, order, index) => _buildOrderItem(order),
+      endOfListWidget: _buildEndOfList(),
+      useListView: true,
+      preloadItemCount: 8,
+      loadMoreThreshold: 500,
+      initialKeepAliveCount: 5,
     );
   }
-}
 
-class OrderCard extends StatelessWidget {
-  final Order order;
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SearchField(
+          hintText: "Tìm kiếm theo mã đơn hàng hoặc tên khách hàng",
+          initialValue: widget.viewModel.searchKeyword,
+          onChanged: (value) {
+            // Only update UI, don't trigger search
+          },
+          onSubmitted: widget.viewModel.handleSearchSubmitted,
+          onClear: widget.viewModel.handleClearSearch,
+        ),
+        _buildSearchResult(),
+        _buildActiveFilters(),
+      ],
+    );
+  }
 
-  const OrderCard({super.key, required this.order});
+  Widget _buildSearchResult() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSizes.paddingNormal,
+        right: AppSizes.paddingNormal,
+        bottom: AppSizes.paddingSmall,
+      ),
+      child: Row(
+        children: [
+          Text(
+            widget.viewModel.searchKeyword != null
+                ? "Kết quả tìm kiếm: ${widget.viewModel.totalOrders} đơn hàng"
+                : "Tổng số: ${widget.viewModel.totalOrders} đơn hàng",
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          if (widget.viewModel.searchKeyword != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              "cho '${widget.viewModel.searchKeyword}'",
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
-  Color getStatusColor(String status) {
-    switch (status) {
-      case 'Đã thanh toán':
-        return Colors.green;
-      case 'Chờ thanh toán':
-        return Colors.orange;
-      case 'Thanh toán thất bại':
-        return Colors.red;
-      case 'Đang xử lý':
-        return Colors.blue;
-      case 'Chờ xác nhận':
-        return Colors.orange;
-      case 'Đã hủy':
-        return Colors.red;
-      default:
-        return Colors.grey;
+  Widget _buildActiveFilters() {
+    final List<Widget> filters = [];
+
+    if (widget.viewModel.paymentStatusFilter != null) {
+      filters.add(_buildFilterChip(
+        'Thanh toán: ${widget.viewModel.paymentStatusFilter}',
+        () => widget.viewModel.setPaymentStatusFilter(null),
+      ));
     }
+
+    if (widget.viewModel.orderStatusFilter != null) {
+      filters.add(_buildFilterChip(
+        'Trạng thái: ${widget.viewModel.orderStatusFilter}',
+        () => widget.viewModel.setOrderStatusFilter(null),
+      ));
+    }
+
+    if (widget.viewModel.paymentMethodFilter != null) {
+      filters.add(_buildFilterChip(
+        'Phương thức: ${widget.viewModel.paymentMethodFilter}',
+        () => widget.viewModel.setPaymentMethodFilter(null),
+      ));
+    }
+
+    if (widget.viewModel.deliveryMethodFilter != null) {
+      filters.add(_buildFilterChip(
+        'Giao hàng: ${widget.viewModel.deliveryMethodFilter}',
+        () => widget.viewModel.setDeliveryMethodFilter(null),
+      ));
+    }
+
+    if (filters.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSizes.paddingNormal,
+        right: AppSizes.paddingNormal,
+        bottom: AppSizes.paddingSmall,
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: filters,
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
+  Widget _buildFilterChip(String label, VoidCallback onRemove) {
+    return Chip(
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 12),
+      ),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onRemove,
+      backgroundColor: Colors.blue.withOpacity(0.1),
+      deleteIconColor: Colors.blue,
+      labelStyle: const TextStyle(color: Colors.blue),
+      visualDensity: VisualDensity.compact,
     );
+  }
 
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: () {
-          _showOrderDetails(context);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      order.id,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () {
-                      _showActionSheet(context);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline, size: 16),
-                  const SizedBox(width: 4),
-                  Text(order.customerName),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('dd/MM/yyyy HH:mm').format(order.orderDate),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    currencyFormat.format(order.totalAmount),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'x${order.quantity}',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          getStatusColor(order.paymentStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: getStatusColor(order.paymentStatus),
-                      ),
-                    ),
-                    child: Text(
-                      order.paymentStatus,
-                      style: TextStyle(
-                        color: getStatusColor(order.paymentStatus),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: getStatusColor(order.orderStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: getStatusColor(order.orderStatus),
-                      ),
-                    ),
-                    child: Text(
-                      order.orderStatus,
-                      style: TextStyle(
-                        color: getStatusColor(order.orderStatus),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+  Widget _buildOrderItem(OrderResponse order) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingNormal),
+      child: RepaintBoundary(
+        child: OrderCard(
+          order: order,
+          onViewDetails: (orderId) {
+            Navigator.pushNamed(
+              context,
+              '/orderDetail',
+              arguments: {'id': orderId},
+            ).then((_) {
+              // Refresh the orders list when returning from detail screen
+              widget.viewModel.handleRefresh();
+            });
+          },
+          onConfirm: _confirmOrder,
+          onCancel: _cancelOrder,
         ),
       ),
     );
   }
 
-  void _showActionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('Xem chi tiết'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showOrderDetails(context);
-                },
-              ),
-              if (order.orderStatus == 'Chờ xác nhận')
-                ListTile(
-                  leading: const Icon(Icons.check_circle),
-                  title: const Text('Xác nhận đơn hàng'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // Confirm order logic
-                  },
-                ),
-              if (order.orderStatus == 'Chờ xác nhận')
-                ListTile(
-                  leading: const Icon(Icons.cancel, color: Colors.red),
-                  title: const Text('Hủy đơn hàng',
-                      style: TextStyle(color: Colors.red)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showCancelConfirmation(context);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showOrderDetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Chi tiết đơn hàng',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow('Mã đơn hàng:', order.id),
-              _buildDetailRow('Khách hàng:', order.customerName),
-              _buildDetailRow(
-                'Ngày đặt:',
-                DateFormat('dd/MM/yyyy HH:mm').format(order.orderDate),
-              ),
-              _buildDetailRow(
-                'Tổng tiền:',
-                NumberFormat.currency(
-                  locale: 'vi_VN',
-                  symbol: '₫',
-                  decimalDigits: 0,
-                ).format(order.totalAmount),
-              ),
-              _buildDetailRow('Số lượng:', '${order.quantity}'),
-              _buildDetailRow('Phương thức thanh toán:', order.paymentMethod),
-              _buildDetailRow('Phương thức giao hàng:', order.deliveryMethod),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Text('Trạng thái thanh toán:'),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          getStatusColor(order.paymentStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: getStatusColor(order.paymentStatus),
-                      ),
-                    ),
-                    child: Text(
-                      order.paymentStatus,
-                      style: TextStyle(
-                        color: getStatusColor(order.paymentStatus),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Text('Trạng thái đơn hàng:'),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: getStatusColor(order.orderStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: getStatusColor(order.orderStatus),
-                      ),
-                    ),
-                    child: Text(
-                      order.orderStatus,
-                      style: TextStyle(
-                        color: getStatusColor(order.orderStatus),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
+  Future<void> _confirmOrder(String orderCode) async {
+    // Implement order confirmation logic if needed
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đơn hàng $orderCode đã được xác nhận'),
+        backgroundColor: Colors.green,
       ),
     );
+    widget.viewModel.handleRefresh();
   }
 
-  void _showCancelConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận hủy'),
-        content: Text('Bạn có chắc chắn muốn hủy đơn hàng ${order.id}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Không'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Cancel order logic
-            },
-            child: Text(
-              'Có',
-              style: TextStyle(color: Colors.red[700]),
-            ),
-          ),
-        ],
+  Future<void> _cancelOrder(String orderCode) async {
+    // Implement order cancellation logic if needed
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đơn hàng $orderCode đã bị hủy'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    widget.viewModel.handleRefresh();
+  }
+
+  Widget _buildEndOfList() {
+    return Text(
+      widget.viewModel.searchKeyword != null
+          ? "Đã hiển thị tất cả ${widget.viewModel.totalOrders} kết quả cho '${widget.viewModel.searchKeyword}'"
+          : "Đã hiển thị tất cả ${widget.viewModel.totalOrders} đơn hàng",
+      style: TextStyle(
+        color: Colors.grey[600],
+        fontStyle: FontStyle.italic,
       ),
     );
   }

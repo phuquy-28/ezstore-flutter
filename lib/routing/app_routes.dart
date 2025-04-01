@@ -3,6 +3,7 @@ import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
 import 'package:ezstore_flutter/data/repositories/user_repository.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
+import 'package:ezstore_flutter/data/repositories/order_repository.dart';
 import 'package:ezstore_flutter/ui/auth/login/view_model/login_viewmodel.dart';
 import 'package:ezstore_flutter/ui/auth/login/widgets/login_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
@@ -11,6 +12,7 @@ import 'package:ezstore_flutter/ui/category/widgets/category_screen.dart';
 import 'package:ezstore_flutter/ui/core/shared/error_screen.dart';
 import 'package:ezstore_flutter/ui/dashboard/view_model/dashboard_viewmodel.dart';
 import 'package:ezstore_flutter/ui/dashboard/widgets/dashboard_screen.dart';
+import 'package:ezstore_flutter/ui/order/view_models/order_detail_viewmodel.dart';
 import 'package:ezstore_flutter/ui/order/widgets/order_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/add_product_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/edit_product_screen.dart';
@@ -31,6 +33,10 @@ import 'package:ezstore_flutter/ui/product/view_models/edit_product_view_model.d
 import 'package:ezstore_flutter/ui/category/view_models/category_screen_view_model.dart';
 import 'package:ezstore_flutter/ui/category/view_models/category_detail_view_model.dart';
 import 'package:ezstore_flutter/ui/category/view_models/add_category_view_model.dart';
+import 'package:ezstore_flutter/ui/order/view_models/order_screen_viewmodel.dart';
+import 'package:ezstore_flutter/ui/order/widgets/order_detail_screen.dart';
+import 'package:ezstore_flutter/ui/order/view_models/update_order_viewmodel.dart';
+import 'package:ezstore_flutter/ui/order/widgets/update_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -62,6 +68,8 @@ class AppRoutes {
   // Other feature routes
   static const String reviews = '/reviews';
   static const String orders = '/orders';
+  static const String orderDetail = '/orderDetail';
+  static const String updateOrder = '/updateOrder';
   static const String promotions = '/promotions';
 
   /// Main route generator function used by the Flutter navigator
@@ -115,7 +123,11 @@ class AppRoutes {
       case reviews:
         return _createRoute(const ReviewScreen());
       case orders:
-        return _createRoute(const OrderScreen());
+        return _handleOrdersRoute(settings);
+      case orderDetail:
+        return _handleOrderDetailRoute(settings, args);
+      case updateOrder:
+        return _handleUpdateOrderRoute(settings, args);
       case promotions:
         return _createRoute(const PromotionScreen());
 
@@ -321,6 +333,59 @@ class AppRoutes {
             Provider.of<UserRepository>(context, listen: false);
         final addUserViewModel = AddUserViewModel(userRepository);
         return AddUserScreen(viewModel: addUserViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Add this method for handling orders route
+  static Route<dynamic> _handleOrdersRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final orderRepository =
+            Provider.of<OrderRepository>(context, listen: false);
+        final orderScreenViewModel = OrderScreenViewModel(orderRepository);
+        return OrderScreen(viewModel: orderScreenViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Add this method for handling order detail route
+  static Route<dynamic> _handleOrderDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final orderId = args?['id'] as int?;
+    return MaterialPageRoute(
+      builder: (context) {
+        final orderRepository =
+            Provider.of<OrderRepository>(context, listen: false);
+        final orderDetailViewModel = OrderDetailViewModel(orderRepository);
+        return OrderDetailScreen(
+          viewModel: orderDetailViewModel,
+          orderId: orderId ?? 0,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  // Add this method for handling update order route
+  static Route<dynamic> _handleUpdateOrderRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final orderId = args?['id'] as int?;
+    return MaterialPageRoute(
+      builder: (context) {
+        final orderRepository =
+            Provider.of<OrderRepository>(context, listen: false);
+        final updateOrderViewModel = UpdateOrderViewModel(orderRepository);
+        return UpdateOrderScreen(
+          viewModel: updateOrderViewModel,
+          orderId: orderId ?? 0,
+        );
       },
       settings: settings,
     );
