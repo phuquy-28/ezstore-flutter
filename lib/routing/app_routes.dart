@@ -4,6 +4,7 @@ import 'package:ezstore_flutter/data/repositories/user_repository.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
 import 'package:ezstore_flutter/data/repositories/order_repository.dart';
+import 'package:ezstore_flutter/data/repositories/promotion_repository.dart';
 import 'package:ezstore_flutter/ui/auth/login/view_model/login_viewmodel.dart';
 import 'package:ezstore_flutter/ui/auth/login/widgets/login_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
@@ -18,6 +19,9 @@ import 'package:ezstore_flutter/ui/product/widgets/add_product_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/edit_product_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/product_detail_screen.dart';
 import 'package:ezstore_flutter/ui/product/widgets/product_screen.dart';
+import 'package:ezstore_flutter/ui/promotion/widgets/add_promotion_screen.dart';
+import 'package:ezstore_flutter/ui/promotion/widgets/edit_promotion_screen.dart';
+import 'package:ezstore_flutter/ui/promotion/widgets/promotion_detail_screen.dart';
 import 'package:ezstore_flutter/ui/promotion/widgets/promotion_screen.dart';
 import 'package:ezstore_flutter/ui/review/widgets/review_screen.dart';
 import 'package:ezstore_flutter/ui/user/view_models/add_user_view_model.dart';
@@ -39,6 +43,10 @@ import 'package:ezstore_flutter/ui/order/view_models/update_order_viewmodel.dart
 import 'package:ezstore_flutter/ui/order/widgets/update_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ezstore_flutter/ui/promotion/view_models/promotion_screen_viewmodel.dart';
+import 'package:ezstore_flutter/ui/promotion/view_models/promotion_detail_viewmodel.dart';
+import 'package:ezstore_flutter/ui/promotion/view_models/add_promotion_viewmodel.dart';
+import 'package:ezstore_flutter/ui/promotion/view_models/edit_promotion_viewmodel.dart';
 
 /// Application routing configuration class
 class AppRoutes {
@@ -71,6 +79,9 @@ class AppRoutes {
   static const String orderDetail = '/orderDetail';
   static const String updateOrder = '/updateOrder';
   static const String promotions = '/promotions';
+  static const String promotionDetail = '/promotionDetail';
+  static const String addPromotion = '/addPromotion';
+  static const String editPromotion = '/editPromotion';
 
   /// Main route generator function used by the Flutter navigator
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -129,7 +140,13 @@ class AppRoutes {
       case updateOrder:
         return _handleUpdateOrderRoute(settings, args);
       case promotions:
-        return _createRoute(const PromotionScreen());
+        return _handlePromotionsRoute(settings);
+      case promotionDetail:
+        return _handlePromotionDetailRoute(settings, args);
+      case addPromotion:
+        return _handleAddPromotionRoute(settings);
+      case editPromotion:
+        return _handleEditPromotionRoute(settings, args);
 
       // Error handling routes
       case error:
@@ -385,6 +402,90 @@ class AppRoutes {
         return UpdateOrderScreen(
           viewModel: updateOrderViewModel,
           orderId: orderId ?? 0,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  // Promotion route handlers
+  static Route<dynamic> _handlePromotionsRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final repository =
+            Provider.of<PromotionRepository>(context, listen: false);
+        final viewModel = PromotionScreenViewModel(repository);
+        return PromotionScreen(viewModel: viewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handlePromotionDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final promotionId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final repository =
+            Provider.of<PromotionRepository>(context, listen: false);
+        final viewModel = PromotionDetailViewModel(repository);
+        return PromotionDetailScreen(
+          viewModel: viewModel,
+          promotionId: promotionId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleAddPromotionRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        // Create view model with required repositories
+        final promotionRepository =
+            Provider.of<PromotionRepository>(context, listen: false);
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+
+        final viewModel = AddPromotionViewModel(
+          promotionRepository,
+          categoryRepository,
+          productRepository,
+        );
+
+        return AddPromotionScreen(viewModel: viewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleEditPromotionRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final promotionId = args?['id'];
+    return MaterialPageRoute(
+      builder: (context) {
+        final promotionRepository =
+            Provider.of<PromotionRepository>(context, listen: false);
+        final categoryRepository =
+            Provider.of<CategoryRepository>(context, listen: false);
+        final productRepository =
+            Provider.of<ProductRepository>(context, listen: false);
+
+        final viewModel = EditPromotionViewModel(
+          promotionRepository,
+          categoryRepository,
+          productRepository,
+        );
+
+        return EditPromotionScreen(
+          viewModel: viewModel,
+          promotionId: promotionId,
         );
       },
       settings: settings,

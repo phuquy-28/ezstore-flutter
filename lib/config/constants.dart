@@ -29,11 +29,12 @@ class ApiConstants {
 
   // Product endpoints
   static const String products = '/products';
-  static const String productDetail = '/products/'; // + id
 
   // Order endpoints
   static const String orders = '/orders';
-  static const String orderDetail = '/orders/'; // + id
+
+  // Promotion endpoints
+  static const String promotions = '/promotions';
 }
 
 class AppColors {
