@@ -35,6 +35,9 @@ class ApiConstants {
 
   // Promotion endpoints
   static const String promotions = '/promotions';
+
+  // Review endpoints
+  static const String reviews = '/reviews';
 }
 
 class AppColors {

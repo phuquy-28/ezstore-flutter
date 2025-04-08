@@ -1,5 +1,6 @@
 import 'package:ezstore_flutter/data/repositories/auth_repository.dart';
 import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
+import 'package:ezstore_flutter/data/repositories/review_repository.dart';
 import 'package:ezstore_flutter/data/repositories/user_repository.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
@@ -47,6 +48,10 @@ import 'package:ezstore_flutter/ui/promotion/view_models/promotion_screen_viewmo
 import 'package:ezstore_flutter/ui/promotion/view_models/promotion_detail_viewmodel.dart';
 import 'package:ezstore_flutter/ui/promotion/view_models/add_promotion_viewmodel.dart';
 import 'package:ezstore_flutter/ui/promotion/view_models/edit_promotion_viewmodel.dart';
+import 'package:ezstore_flutter/ui/review/view_models/review_screen_viewmodel.dart';
+import 'package:ezstore_flutter/ui/review/view_models/review_detail_viewmodel.dart';
+import 'package:ezstore_flutter/ui/review/widgets/review_detail_screen.dart';
+import 'package:ezstore_flutter/domain/models/review/widgets/review_response.dart';
 
 /// Application routing configuration class
 class AppRoutes {
@@ -82,6 +87,7 @@ class AppRoutes {
   static const String promotionDetail = '/promotionDetail';
   static const String addPromotion = '/addPromotion';
   static const String editPromotion = '/editPromotion';
+  static const String reviewDetail = '/reviewDetail';
 
   /// Main route generator function used by the Flutter navigator
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -130,15 +136,15 @@ class AppRoutes {
       case addUser:
         return _handleAddUserRoute(settings);
 
-      // Simple routes that don't need special handling
-      case reviews:
-        return _createRoute(const ReviewScreen());
+      // Order routes
       case orders:
         return _handleOrdersRoute(settings);
       case orderDetail:
         return _handleOrderDetailRoute(settings, args);
       case updateOrder:
         return _handleUpdateOrderRoute(settings, args);
+
+      // Promotion routes
       case promotions:
         return _handlePromotionsRoute(settings);
       case promotionDetail:
@@ -147,6 +153,12 @@ class AppRoutes {
         return _handleAddPromotionRoute(settings);
       case editPromotion:
         return _handleEditPromotionRoute(settings, args);
+
+      // Review routes
+      case reviews:
+        return _handleReviewsRoute(settings);
+      case reviewDetail:
+        return _handleReviewDetailRoute(settings, args);
 
       // Error handling routes
       case error:
@@ -486,6 +498,43 @@ class AppRoutes {
         return EditPromotionScreen(
           viewModel: viewModel,
           promotionId: promotionId,
+        );
+      },
+      settings: settings,
+    );
+  }
+
+  // Review route handlers
+  static Route<dynamic> _handleReviewsRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final reviewRepository =
+            Provider.of<ReviewRepository>(context, listen: false);
+
+        final viewModel = ReviewScreenViewModel(reviewRepository);
+
+        return ReviewScreen(viewModel: viewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleReviewDetailRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final review = args?['review'] as ReviewResponse?;
+    return MaterialPageRoute(
+      builder: (context) {
+        final reviewRepository =
+            Provider.of<ReviewRepository>(context, listen: false);
+        final viewModel = ReviewDetailViewModel(reviewRepository);
+        if (review != null) {
+          viewModel.setReview(review);
+        }
+        return ReviewDetailScreen(
+          viewModel: viewModel,
+          reviewId: review?.reviewId ?? 0,
         );
       },
       settings: settings,

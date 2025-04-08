@@ -4,6 +4,7 @@ import 'package:ezstore_flutter/data/repositories/dashboard_repository.dart';
 import 'package:ezstore_flutter/data/repositories/order_repository.dart';
 import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/promotion_repository.dart';
+import 'package:ezstore_flutter/data/repositories/review_repository.dart';
 import 'package:ezstore_flutter/data/repositories/user_repository.dart';
 import 'package:ezstore_flutter/data/services/api_service.dart';
 import 'package:ezstore_flutter/data/services/auth_service.dart';
@@ -12,6 +13,7 @@ import 'package:ezstore_flutter/data/services/dashboard_service.dart';
 import 'package:ezstore_flutter/data/services/order_service.dart';
 import 'package:ezstore_flutter/data/services/product_service.dart';
 import 'package:ezstore_flutter/data/services/promotion_service.dart';
+import 'package:ezstore_flutter/data/services/review_service.dart';
 import 'package:ezstore_flutter/data/services/shared_preference_service.dart';
 import 'package:ezstore_flutter/data/services/upload_service.dart';
 import 'package:ezstore_flutter/data/services/user_service.dart';
@@ -42,6 +44,7 @@ List<SingleChildWidget> get providers {
     Provider(create: (context) => ProductService(context.read<ApiService>())),
     Provider(create: (context) => OrderService(context.read<ApiService>())),
     Provider(create: (context) => PromotionService(context.read<ApiService>())),
+    Provider(create: (context) => ReviewService(context.read<ApiService>())),
 
     // Repositories
     Provider(
@@ -74,6 +77,10 @@ List<SingleChildWidget> get providers {
     Provider(
         create: (context) => PromotionRepository(
               context.read<PromotionService>(),
+            )),
+    Provider(
+        create: (context) => ReviewRepository(
+              context.read<ReviewService>(),
             )),
 
     // ViewModels
