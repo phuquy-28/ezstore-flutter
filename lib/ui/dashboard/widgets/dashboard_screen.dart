@@ -199,8 +199,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
+      crossAxisSpacing: 4,
+      mainAxisSpacing: 4,
       childAspectRatio: 1.4,
       children: [
         MetricCard(
