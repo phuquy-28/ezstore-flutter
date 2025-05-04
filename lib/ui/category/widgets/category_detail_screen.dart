@@ -123,7 +123,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                     _isImageChanged)
                   _buildImagePreview(),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 DetailTextField(
                   controller: _nameController,
@@ -141,7 +141,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                 ),
 
                 if (isEditMode) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: _selectImage,
                     style: OutlinedButton.styleFrom(

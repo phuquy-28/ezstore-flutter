@@ -63,7 +63,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   if (widget.viewModel.isImageSelected) _buildImagePreview(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -88,7 +88,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: _selectImage,
                     style: OutlinedButton.styleFrom(
