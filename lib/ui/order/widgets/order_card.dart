@@ -65,24 +65,27 @@ class OrderCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      orderCode,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                  Text(
+                    orderCode,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () {
-                      _showActionSheet(context, orderCode);
-                    },
-                  ),
+                  SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      child: const Icon(Icons.more_vert),
+                      onTap: () {
+                        _showActionSheet(context, orderCode);
+                      },
+                    ),
+                  )
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   const Icon(Icons.person_outline, size: 16),
@@ -98,26 +101,7 @@ class OrderCard extends StatelessWidget {
                   Text(formattedDate),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    currencyFormat.format(total),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'x$numberOfItems',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -127,12 +111,12 @@ class OrderCard extends StatelessWidget {
                     paymentMethod,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: Colors.black,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -142,10 +126,18 @@ class OrderCard extends StatelessWidget {
                     deliveryMethod,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: Colors.black,
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tổng tiền: ' + currencyFormat.format(total),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(

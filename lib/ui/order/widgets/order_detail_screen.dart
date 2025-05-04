@@ -151,7 +151,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   : 'N/A',
             ),
             _buildInfoRow(
-              'Phương thức thanh toán:',
+              'Hình thức thanh toán:',
               PaymentMethodTranslations.getMethodName(order.paymentMethod),
             ),
             _buildStatusRow(
@@ -323,7 +323,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         fontSize: 13,
                       ),
                     ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       if (discount > 0)
@@ -338,8 +338,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       if (discount > 0) const SizedBox(width: 8),
                       Text(
                         currencyFormat.format(unitPrice),
-                        style: const TextStyle(
-                          color: Colors.red,
+                        style: TextStyle(
+                          color: discount > 0 ? Colors.red : Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -453,9 +453,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SizedBox(
             width: 150,
@@ -469,7 +470,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -481,7 +481,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 150,
@@ -527,7 +527,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     Color? textColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

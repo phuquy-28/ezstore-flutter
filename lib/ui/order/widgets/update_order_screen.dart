@@ -185,7 +185,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
               currencyFormat.format(order.finalTotal ?? 0),
             ),
             _buildStatusRow(
-              'Trạng thái hiện tại:',
+              'Trạng thái:',
               OrderStatusTranslations.getStatusName(order.status),
               OrderStatusTranslations.getStatusColor(order.status),
             ),
@@ -514,7 +514,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 120,
@@ -568,12 +568,13 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
