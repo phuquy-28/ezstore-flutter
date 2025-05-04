@@ -64,6 +64,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final numberFormat = NumberFormat.decimalPattern("vi_VN");
     // Hiển thị loading khi đang tải dữ liệu
     if (widget.viewModel.isLoading) {
       return const Scaffold(
@@ -192,7 +193,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '${product.price}',
+                  '${numberFormat.format(product.price)}',
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.black,

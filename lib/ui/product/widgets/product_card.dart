@@ -79,6 +79,7 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
@@ -117,10 +118,12 @@ class ProductCard extends StatelessWidget {
                       children: [
                         Text(
                           currencyFormat.format(product.price!),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: product.price != product.priceWithDiscount
+                                ? Colors.red
+                                : Colors.black,
                           ),
                         ),
                         const SizedBox(width: 8),

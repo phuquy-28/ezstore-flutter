@@ -525,17 +525,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
                         );
                       }).toList(),
 
-                      const SizedBox(height: 16),
-
                       // Nút thêm biến thể ở dưới
                       InkWell(
-                        onTap: () => viewModel.addVariant(),
+                        onTap: () => widget.viewModel.addVariant(),
                         borderRadius: BorderRadius.circular(8),
                         splashColor: Colors.grey[300],
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.white,
+                            border: Border.all(color: Colors.black!),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Row(
@@ -543,13 +542,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
                             children: [
                               Icon(
                                 Icons.add_circle_outline,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                               SizedBox(width: 8),
                               Text(
                                 'Thêm biến thể mới',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
