@@ -22,7 +22,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedYear = 2024;
+  int _selectedYear = DateTime.now().year;
   bool _isLoading = false;
 
   @override
@@ -199,8 +199,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
+      crossAxisSpacing: 4,
+      mainAxisSpacing: 4,
       childAspectRatio: 1.4,
       children: [
         MetricCard(
@@ -255,7 +255,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             DropdownButton<int>(
               value: _selectedYear,
-              items: [2024, 2023, 2022].map((year) {
+              items: List.generate(5, (index) {
+                final year = DateTime.now().year - index;
                 return DropdownMenuItem<int>(
                   value: year,
                   child: Text(year.toString()),
