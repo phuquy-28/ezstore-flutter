@@ -38,7 +38,6 @@ class OrderCard extends StatelessWidget {
     final orderStatusText =
         OrderStatusTranslations.getStatusName(order.orderStatus);
     final customerName = order.customerName ?? 'Không xác định';
-    final numberOfItems = order.numberOfItems ?? 0;
     final paymentMethod =
         PaymentMethodTranslations.getMethodName(order.paymentMethod);
     final deliveryMethod =

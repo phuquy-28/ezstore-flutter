@@ -11,6 +11,8 @@ class ApiConstants {
   // Auth endpoints
   static const String logout = '/auth/logout';
   static const String refresh = '/auth/refresh';
+  static const String recoverPassword = '/auth/recover-password-code';
+  static const String resetPassword = '/auth/reset-password-code';
 
   // Workspace endpoints
   static const String login = '/workspace/login';

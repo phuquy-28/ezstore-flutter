@@ -118,6 +118,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       onFieldSubmitted: (_) => _handleLogin(),
                     ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: !_isLoading
+                            ? () {
+                                Navigator.of(context)
+                                    .pushNamed('/forget-password');
+                              }
+                            : null,
+                        child: const Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: AppSizes.paddingLarge),
                     CustomButton(
                       text: 'Đăng nhập',

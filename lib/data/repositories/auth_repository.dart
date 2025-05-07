@@ -1,5 +1,6 @@
-import '../services/auth_service.dart';
-import '../services/shared_preference_service.dart';
+import 'package:ezstore_flutter/data/models/auth/reset_password_req.dart';
+import 'package:ezstore_flutter/data/services/auth_service.dart';
+import 'package:ezstore_flutter/data/services/shared_preference_service.dart';
 import 'dart:developer' as dev;
 
 class AuthRepository {
@@ -60,5 +61,37 @@ class AuthRepository {
 
   bool isLoggedIn() {
     return _preferenceService.getAccessToken() != null;
+  }
+
+  Future<bool> recoverPassword(String email) async {
+    try {
+      final response = await _authService.recoverPassword(email);
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      final errors = response.message.split(',');
+      throw Exception(errors.first);
+    } catch (e) {
+      dev.log('Exception khi khôi phục mật khẩu: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> resetPassword(ResetPasswordReq resetPasswordReq) async {
+    try {
+      final response = await _authService.resetPassword(resetPasswordReq);
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      final errors = response.message.split(',');
+      throw Exception(errors.first);
+    } catch (e) {
+      dev.log('Exception khi đặt lại mật khẩu: $e');
+      rethrow;
+    }
   }
 }

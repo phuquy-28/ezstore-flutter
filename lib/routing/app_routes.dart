@@ -6,8 +6,14 @@ import 'package:ezstore_flutter/data/repositories/product_repository.dart';
 import 'package:ezstore_flutter/data/repositories/category_repository.dart';
 import 'package:ezstore_flutter/data/repositories/order_repository.dart';
 import 'package:ezstore_flutter/data/repositories/promotion_repository.dart';
+import 'package:ezstore_flutter/ui/auth/forget-password/viewmodels/forget_password_viewmodel.dart';
+import 'package:ezstore_flutter/ui/auth/forget-password/widgets/forget_password_screen.dart';
 import 'package:ezstore_flutter/ui/auth/login/view_model/login_viewmodel.dart';
 import 'package:ezstore_flutter/ui/auth/login/widgets/login_screen.dart';
+import 'package:ezstore_flutter/ui/auth/reset-password/viewmodels/reset_password_viewmodel.dart';
+import 'package:ezstore_flutter/ui/auth/reset-password/widgets/reset_password_screen.dart';
+import 'package:ezstore_flutter/ui/auth/verify/view_model/verify_viewmodel.dart';
+import 'package:ezstore_flutter/ui/auth/verify/widgets/verify_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/add_category_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/category_detail_screen.dart';
 import 'package:ezstore_flutter/ui/category/widgets/category_screen.dart';
@@ -57,6 +63,9 @@ import 'package:ezstore_flutter/domain/models/review/widgets/review_response.dar
 class AppRoutes {
   // Authentication routes
   static const String login = '/login';
+  static const String verify = '/verify';
+  static const String resetPassword = '/reset-password';
+  static const String forgetPassword = '/forget-password';
 
   // Main routes
   static const String dashboard = '/dashboard';
@@ -105,6 +114,12 @@ class AppRoutes {
       // Auth routes
       case login:
         return _handleLoginRoute(settings);
+      case verify:
+        return _handleVerifyRoute(settings);
+      case resetPassword:
+        return _handleResetPasswordRoute(settings, args);
+      case forgetPassword:
+        return _handleForgetPasswordRoute(settings);
 
       // Main routes
       case dashboard:
@@ -182,6 +197,18 @@ class AppRoutes {
             Provider.of<AuthRepository>(context, listen: false);
         final loginViewModel = LoginViewModel(authRepository);
         return LoginScreen(viewModel: loginViewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  static Route<dynamic> _handleVerifyRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final authRepository =
+            Provider.of<AuthRepository>(context, listen: false);
+        final verifyViewModel = VerifyViewModel(authRepository);
+        return VerifyScreen(viewModel: verifyViewModel);
       },
       settings: settings,
     );
@@ -536,6 +563,39 @@ class AppRoutes {
           viewModel: viewModel,
           reviewId: review?.reviewId ?? 0,
         );
+      },
+      settings: settings,
+    );
+  }
+
+  // Add this method for handling reset password route
+  static Route<dynamic> _handleResetPasswordRoute(
+    RouteSettings settings,
+    Map<String, dynamic>? args,
+  ) {
+    final email = args?['email'] as String?;
+    final code = args?['code'] as String?;
+    return MaterialPageRoute(
+      builder: (context) {
+        final authRepository =
+            Provider.of<AuthRepository>(context, listen: false);
+        final viewModel = ResetPasswordViewModel(authRepository);
+        if (email != null) viewModel.setEmail(email);
+        if (code != null) viewModel.setVerificationCode(code);
+        return ResetPasswordScreen(viewModel: viewModel);
+      },
+      settings: settings,
+    );
+  }
+
+  // Add this method for handling forget password route
+  static Route<dynamic> _handleForgetPasswordRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) {
+        final authRepository =
+            Provider.of<AuthRepository>(context, listen: false);
+        final viewModel = ForgetPasswordViewModel(authRepository);
+        return ForgetPasswordScreen(viewModel: viewModel);
       },
       settings: settings,
     );

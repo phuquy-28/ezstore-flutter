@@ -534,7 +534,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            border: Border.all(color: Colors.black!),
+                            border: Border.all(color: Colors.black),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Row(

@@ -112,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 24),
               _buildRevenueChart(),
               const SizedBox(height: 24),
-              _buildLatestOrders(),
+              // _buildLatestOrders(),
             ],
           ),
         ),
@@ -372,20 +372,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildLatestOrders() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Đơn hàng mới nhất',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        // OrdersTable(orders: OrdersTable.getMockOrders()),
-      ],
-    );
-  }
+  // Widget _buildLatestOrders() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       const Text(
+  //         'Đơn hàng mới nhất',
+  //         style: TextStyle(
+  //           fontSize: 20,
+  //           fontWeight: FontWeight.bold,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 16),
+  //       // OrdersTable(orders: OrdersTable.getMockOrders()),
+  //     ],
+  //   );
+  // }
 }

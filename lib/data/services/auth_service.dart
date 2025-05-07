@@ -1,7 +1,8 @@
+import 'package:ezstore_flutter/config/constants.dart';
+import 'package:ezstore_flutter/data/models/auth/reset_password_req.dart';
 import 'package:ezstore_flutter/domain/models/auth/auth_response.dart';
 import 'package:ezstore_flutter/data/models/api_response.dart';
 import 'api_service.dart';
-import '../../config/constants.dart';
 import 'shared_preference_service.dart';
 
 class AuthService {
@@ -39,11 +40,30 @@ class AuthService {
         data: null,
       );
     }
-    
+
     return await _api.get(
       path: ApiConstants.refresh,
       queryParameters: {'refresh_token': refreshToken},
       fromJson: (json) => AuthResponse.fromJson(json),
+    );
+  }
+
+  Future<ApiResponse<void>> recoverPassword(String email) async {
+    return await _api.post(
+      path: ApiConstants.recoverPassword,
+      data: {
+        'email': email,
+      },
+      fromJson: (json) => (),
+    );
+  }
+
+  Future<ApiResponse<void>> resetPassword(
+      ResetPasswordReq reset_password_req) async {
+    return await _api.post(
+      path: ApiConstants.resetPassword,
+      data: reset_password_req.toJson(),
+      fromJson: (json) => (),
     );
   }
 }
